@@ -20,6 +20,7 @@ const EP = {
   UPDATE_LOGO: (code: string) => `/school-group/${code}/update/logo`,
   FEATURE_CODES: (code: string) => `/school-group/${code}/get/featureCodes`,
   GET_ALL: '/school-group/getAll',
+  TENANT_REGISTRY: '/school-group/getAll/tenet-registry',
   FILTER: '/school-group/filter',
   ANALYTICS: '/school-group/analytics',
   DASHBOARD: '/school-group/dashboard',
@@ -54,6 +55,11 @@ export interface SchoolsInGroupResponse {
   totalItems: number
   totalPages: number
   currentPage: number
+}
+
+export interface TenantRegistrySchool {
+  code: string
+  schoolName: string
 }
 
 const toSchoolGroup = (item: any): SchoolGroup => {
@@ -187,6 +193,35 @@ const validatePaidAt = (raw: string): void => {
 }
 
 export const schoolGroupService = {
+  getTenantRegistry: async (): Promise<TenantRegistrySchool[]> => {
+    try {
+      const res = await AxiosFunc.Get(EP.TENANT_REGISTRY)
+      if (res.data?.status !== 200) {
+        throw new Error(res.data?.message ?? 'Fetch failed')
+      }
+      if (!Array.isArray(res.data?.data)) {
+        throw new Error('Invalid tenant registry response')
+      }
+
+      return res.data.data.map((school: unknown) => {
+        if (
+          !school ||
+          typeof school !== 'object' ||
+          !('code' in school) ||
+          typeof school.code !== 'string' ||
+          !('schoolName' in school) ||
+          typeof school.schoolName !== 'string'
+        ) {
+          throw new Error('Invalid school entry in tenant registry response')
+        }
+
+        return { code: school.code, schoolName: school.schoolName }
+      })
+    } catch (e: unknown) {
+      return extractError(e, 'Failed to fetch schools')
+    }
+  },
+
   register: async (data: CreateSchoolGroupRequest): Promise<SchoolGroup | null> => {
     try {
       const res = await AxiosFunc.PostFormData(EP.REGISTER, buildRegisterFormData(data))

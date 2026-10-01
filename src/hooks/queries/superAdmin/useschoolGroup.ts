@@ -68,6 +68,14 @@ export const useSchoolsByGroup = (schoolGroupCode: string, params: PageParams = 
     placeholderData: keepPreviousData,
   })
 
+export const useTenantRegistry = () =>
+  useQuery({
+    queryKey: [...schoolGroupKeys.all, 'tenantRegistry'] as const,
+    queryFn: () => schoolGroupService.getTenantRegistry(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })
+
 export const useFeatureCodes = (schoolGroupCode: string) =>
   useQuery({
     queryKey: schoolGroupKeys.featureCodes(schoolGroupCode),

@@ -666,39 +666,16 @@ textarea:focus-visible {
 .campusflow-login {
   display: flex;
   min-height: 100%;
-  background: #fff;
-}
-
-.campusflow-login__visual {
-  background: #102538;
+  background: #eaf3f6;
 }
 
 .campusflow-login__background {
-  opacity: 0.58;
-  filter: saturate(0.8);
-}
-
-.campusflow-login__visual::after {
-  position: absolute;
-  z-index: 1;
-  background:
-    linear-gradient(135deg, rgb(16 37 56 / 18%), rgb(16 37 56 / 72%)),
-    linear-gradient(0deg, rgb(9 29 43 / 22%), transparent 60%);
-  content: '';
-  inset: 0;
-}
-
-.campusflow-login__logo {
-  max-width: min(21rem, 70%);
-  border: 1px solid rgb(255 255 255 / 28%);
-  border-radius: 24px;
-  background: rgb(255 255 255 / 90%);
-  padding: 1.35rem;
-  box-shadow: 0 24px 70px rgb(7 24 39 / 30%);
+  opacity: 1;
+  object-position: center;
 }
 
 .campusflow-login__form-area {
-  background: radial-gradient(ellipse at 100% 0, rgb(18 168 145 / 8%), transparent 30rem), #f8fafc;
+  background: transparent;
 }
 
 .campusflow-login__card {

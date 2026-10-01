@@ -154,7 +154,6 @@ export const schoolService = {
   getAll: async (): Promise<SchoolsPaginatedResponse> => {
     try {
       const res = await AxiosFunc.Get(EP.GET_ALL)
-      console.log(res)
       if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
       return toPaginatedResponse(res.data?.data)
     } catch (e: any) {
