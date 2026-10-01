@@ -1,0 +1,363 @@
+import AxiosFunc from '../../utils/axios'
+import type {
+  SchoolGroup,
+  CreateSchoolGroupRequest,
+  UpdateSchoolGroupRequestDto,
+  SchoolGroupsPaginatedResponse,
+  CreateSchoolGroupJsonPayload,
+  FilterSchoolGroupRequestDTO,
+  SchoolGroupAnalytics,
+  SuperAdminDashboard,
+  SchoolGroupsByYear,
+  SchoolGroupSummary,
+  AssignSubscriptionRequestDto,
+} from '../../types/superAdmin/SchoolGroup'
+
+const EP = {
+  REGISTER: '/school-group/register',
+  GET: (code: string) => `/school-group/${code}/get`,
+  UPDATE_NAME: (code: string) => `/school-group/${code}/update/name`,
+  UPDATE_LOGO: (code: string) => `/school-group/${code}/update/logo`,
+  FEATURE_CODES: (code: string) => `/school-group/${code}/get/featureCodes`,
+  GET_ALL: '/school-group/getAll',
+  FILTER: '/school-group/filter',
+  ANALYTICS: '/school-group/analytics',
+  DASHBOARD: '/school-group/dashboard',
+  BY_YEAR: (year: number) => `/school-group/by-year/${year}`,
+  SUMMARY: '/school-group/summery',
+  SUBSCRIBE: (code: string, pkgId: number) => `/school-group/${code}/subscribe/package/${pkgId}`,
+  SCHOOLS_BY_GROUP: (code: string) => `/school-group/${code}/school/getAll`,
+}
+
+export interface SchoolInGroup {
+  webSite: string
+  managedBy: string
+  type: any
+  schoolId: number
+  schoolName: string
+  schoolCode: string
+  address: string
+  phoneNumber: string
+  email: string
+  session: string
+  sessionStartMonth: string
+  startDateOfWeek: string
+  logo: string | null
+  tenantId: string
+  databaseName: string
+  isActive: boolean | null
+  createdDate: string | null
+}
+
+export interface SchoolsInGroupResponse {
+  schools: SchoolInGroup[]
+  totalItems: number
+  totalPages: number
+  currentPage: number
+}
+
+const toSchoolGroup = (item: any): SchoolGroup => {
+  if (!item || typeof item !== 'object') {
+    return {
+      schoolGroupId: 0,
+      schoolGroupName: '',
+      schoolGroupCode: '',
+      phoneNumber: '',
+      webSite: '',
+      managedBy: '',
+      email: '',
+      logo: null,
+      tenantId: '',
+      databaseName: '',
+      defaultConnectionString: true,
+      dbAddress: '',
+      username: '',
+      databaseType: '',
+      isActive: false,
+      createdDate: '',
+      planName: '',
+      billingPeriod: null,
+    }
+  }
+  return {
+    schoolGroupId: Number(item.schoolGroupId ?? 0),
+    schoolGroupName: String(item.schoolGroupName ?? ''),
+    schoolGroupCode: String(item.schoolGroupCode ?? ''),
+    phoneNumber: String(item.phoneNumber ?? ''),
+    webSite: String(item.webSite ?? null),
+    managedBy: String(item.managedBy ?? null),
+    email: String(item.email ?? ''),
+    logo: item.logo ?? null,
+    tenantId: String(item.tenantId ?? ''),
+    databaseName: String(item.databaseName ?? ''),
+    defaultConnectionString: Boolean(item.defaultConnectionString ?? true),
+    dbAddress: item.dbAddress ?? '',
+    username: item.username ?? '',
+    databaseType: item.databaseType ?? '',
+    isActive: Boolean(item.isActive ?? false),
+    createdDate: String(item.createdDate ?? ''),
+    planName: String(item.planName ?? ''),
+    billingPeriod: item.billingPeriod ?? null,
+  }
+}
+
+const toSchoolInGroup = (item: any): SchoolInGroup => ({
+  schoolId: Number(item.schoolId ?? 0),
+  schoolName: String(item.schoolName ?? ''),
+  schoolCode: String(item.schoolCode ?? ''),
+  address: String(item.address ?? ''),
+  phoneNumber: String(item.phoneNumber ?? ''),
+  email: String(item.email ?? ''),
+  session: String(item.session ?? ''),
+  sessionStartMonth: String(item.sessionStartMonth ?? ''),
+  startDateOfWeek: String(item.startDateOfWeek ?? ''),
+  logo: item.logo ?? null,
+  tenantId: String(item.tenantId ?? ''),
+  databaseName: String(item.databaseName ?? ''),
+  isActive: item.isActive ?? null,
+  createdDate: item.createdDate ?? null,
+  type: item.type ?? null,
+  webSite: String(item.webSite ?? null),
+  managedBy: String(item.managedBy ?? null),
+})
+
+const toPaginatedResponse = (data: any): SchoolGroupsPaginatedResponse => ({
+  schoolGroups: (data?.schoolGroups ?? []).map(toSchoolGroup),
+  currentPage: Number(data?.currentPage ?? 0),
+  totalItems: Number(data?.totalItems ?? 0),
+  totalPages: Number(data?.totalPages ?? 0),
+})
+
+const buildRegisterFormData = (data: CreateSchoolGroupRequest): FormData => {
+  const fd = new FormData()
+  const jsonPayload: CreateSchoolGroupJsonPayload = {
+    packageId: data.packageId,
+    schoolGroupName: data.schoolGroupName,
+    phoneNumber: data.phoneNumber,
+    email: data.email,
+    databaseName: data.databaseName.toLowerCase(),
+    defaultConnectionString: data.defaultConnectionString,
+    dbAddress: data.dbAddress ?? '',
+    username: data.username ?? '',
+    password: data.password ?? '',
+    databaseType: data.databaseType ?? '',
+  }
+  fd.append('schoolGroupData', JSON.stringify(jsonPayload))
+  fd.append('groupLogo', data.groupLogo)
+  return fd
+}
+
+interface PageParams {
+  page?: number
+  size?: number
+  sortBy?: string
+  sortDirection?: 'asc' | 'desc'
+}
+
+const pageQuery = ({ page = 0, size = 10, sortBy, sortDirection }: PageParams): string => {
+  const params = new URLSearchParams()
+  params.set('page', String(page))
+  params.set('size', String(size))
+  if (sortBy) params.set('sortBy', sortBy)
+  if (sortDirection) params.set('sortDirection', sortDirection)
+  return params.toString()
+}
+
+const extractError = (error: any, fallback: string): never => {
+  throw new Error(error?.response?.data?.message ?? error?.message ?? fallback)
+}
+const normalisePaidAt = (raw: string): string => {
+  if (!raw) return raw
+  // datetime-local gives "YYYY-MM-DDTHH:mm" — append ":00" seconds if absent
+  return raw.length === 16 ? `${raw}:00` : raw
+}
+const validatePaidAt = (raw: string): void => {
+  if (!raw) throw new Error('Paid date is required.')
+
+  // Append seconds so the Date constructor parses it as local time
+  const withSeconds = raw.length === 16 ? `${raw}:00` : raw
+  const d = new Date(withSeconds)
+
+  if (isNaN(d.getTime())) throw new Error('Invalid paid date format.')
+
+  const twoMinutesFromNow = new Date(Date.now() + 2 * 60 * 1000)
+  if (d > twoMinutesFromNow) {
+    throw new Error('Paid date cannot be in the future.')
+  }
+}
+
+export const schoolGroupService = {
+  register: async (data: CreateSchoolGroupRequest): Promise<SchoolGroup | null> => {
+    try {
+      const res = await AxiosFunc.PostFormData(EP.REGISTER, buildRegisterFormData(data))
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Registration failed')
+      return res.data?.data ? toSchoolGroup(res.data.data) : null
+    } catch (e: any) {
+      return extractError(e, 'Failed to register school group')
+    }
+  },
+
+  getByCode: async (code: string): Promise<SchoolGroup> => {
+    try {
+      const res = await AxiosFunc.Get(EP.GET(code))
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return toSchoolGroup(res.data?.data)
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch school group')
+    }
+  },
+
+  updateName: async (code: string, dto: UpdateSchoolGroupRequestDto): Promise<SchoolGroup> => {
+    try {
+      const res = await AxiosFunc.Put(EP.UPDATE_NAME(code), dto)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Update failed')
+      return toSchoolGroup(res.data?.data)
+    } catch (e: any) {
+      return extractError(e, 'Failed to update school group name')
+    }
+  },
+
+  updateLogo: async (code: string, logo: File): Promise<void> => {
+    try {
+      const fd = new FormData()
+      fd.append('logo', logo)
+      const res = await AxiosFunc.PutFormData(EP.UPDATE_LOGO(code), fd)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Logo update failed')
+    } catch (e: any) {
+      extractError(e, 'Failed to update school group logo')
+    }
+  },
+
+  getFeatureCodes: async (code: string): Promise<string[]> => {
+    try {
+      const res = await AxiosFunc.Get(EP.FEATURE_CODES(code))
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return (res.data?.data as string[]) ?? []
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch feature codes')
+    }
+  },
+
+  getAll: async (params: PageParams = {}): Promise<SchoolGroupsPaginatedResponse> => {
+    try {
+      const res = await AxiosFunc.Get(`${EP.GET_ALL}?${pageQuery(params)}`)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return toPaginatedResponse(res.data?.data)
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch school groups')
+    }
+  },
+
+  filter: async (
+    dto: FilterSchoolGroupRequestDTO,
+    params: PageParams = {},
+  ): Promise<SchoolGroupsPaginatedResponse> => {
+    try {
+      const res = await AxiosFunc.Post(`${EP.FILTER}?${pageQuery(params)}`, dto)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Filter failed')
+      return toPaginatedResponse(res.data?.data)
+    } catch (e: any) {
+      return extractError(e, 'Failed to filter school groups')
+    }
+  },
+
+  getAnalytics: async (): Promise<SchoolGroupAnalytics> => {
+    try {
+      const res = await AxiosFunc.Get(EP.ANALYTICS)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return res.data?.data as SchoolGroupAnalytics
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch analytics')
+    }
+  },
+
+  getDashboard: async (): Promise<SuperAdminDashboard> => {
+    try {
+      const res = await AxiosFunc.Get(EP.DASHBOARD)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return res.data?.data as SuperAdminDashboard
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch dashboard')
+    }
+  },
+
+  getByYear: async (year: number): Promise<SchoolGroupsByYear> => {
+    try {
+      const res = await AxiosFunc.Get(EP.BY_YEAR(year))
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return res.data?.data as SchoolGroupsByYear
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch school groups by year')
+    }
+  },
+
+  getSummary: async (): Promise<SchoolGroupSummary> => {
+    try {
+      const res = await AxiosFunc.Get(EP.SUMMARY)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      return res.data?.data as SchoolGroupSummary
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch summary')
+    }
+  },
+
+  subscribePackage: async (
+    code: string,
+    packageId: number,
+    dto: AssignSubscriptionRequestDto,
+    isPaid?: boolean,
+  ): Promise<void> => {
+    try {
+      if (isPaid) {
+        validatePaidAt(dto.paidAt)
+
+        const normalisedDto: AssignSubscriptionRequestDto = {
+          ...dto,
+          // Ensure seconds are present and apply the safety buffer
+          paidAt: normalisePaidAt(dto.paidAt),
+        }
+
+        const query = `?isPaid=true`
+        const res = await AxiosFunc.Put(`${EP.SUBSCRIBE(code, packageId)}${query}`, normalisedDto)
+        if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Subscribe failed')
+        return
+      }
+      const query = `?isPaid=false`
+      const res = await AxiosFunc.Put(`${EP.SUBSCRIBE(code, packageId)}${query}`, dto)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Subscribe failed')
+    } catch (e: any) {
+      extractError(e, 'Failed to subscribe package')
+    }
+  },
+
+  getLogo: async (logoPath: string): Promise<Blob> => {
+    if (!logoPath) throw new Error('Logo path is required')
+    let fullPath: string
+    if (logoPath.startsWith('/')) fullPath = logoPath
+    else if (logoPath.startsWith('uploads/')) fullPath = `/${logoPath}`
+    else fullPath = `/uploads/${logoPath}`
+    const res = await AxiosFunc.GetFile(fullPath)
+    if (!(res.data instanceof Blob)) throw new Error('Invalid image response')
+    return res.data
+  },
+
+  getSchoolsByGroup: async (
+    code: string,
+    params: PageParams = {},
+  ): Promise<SchoolsInGroupResponse> => {
+    try {
+      const res = await AxiosFunc.Get(`${EP.SCHOOLS_BY_GROUP(code)}?${pageQuery(params)}`)
+      if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Fetch failed')
+      const d = res.data?.data
+      return {
+        schools: (d?.schools ?? []).map(toSchoolInGroup),
+        totalItems: Number(d?.totalItems ?? 0),
+        totalPages: Number(d?.totalPages ?? 0),
+        currentPage: Number(d?.currentPage ?? 0),
+      }
+    } catch (e: any) {
+      return extractError(e, 'Failed to fetch schools')
+    }
+  },
+}
+ 
