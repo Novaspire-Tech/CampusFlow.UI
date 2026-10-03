@@ -51,6 +51,12 @@ const transformResponseToPackage = (item: any): Package => {
           packageFeatureCode: f.packageFeatureCode ?? "",
           featureName:        f.featureName        ?? "",
           description:        f.description        ?? "",
+          scope:              f.scope              ?? "",
+          operations:         Array.isArray(f.operations) ? f.operations : [],
+          limitType:          f.limitType          ?? "NONE",
+          limitValue:         Number(f.limitValue  ?? 0),
+          unit:               f.unit               ?? "",
+          isEnabled:          f.isEnabled          ?? true,
           displayOrder:       f.displayOrder       ?? 0,
         }))
       : [],
@@ -62,21 +68,20 @@ const transformResponseToPackage = (item: any): Package => {
 };
 
 const transformDropdownOptions = (data: any): PackageDropdownOptions => ({
-  billingPeriods:    Array.isArray(data?.billingPeriods)    ? data.billingPeriods    : [],
-  packageCategories: Array.isArray(data?.packageCategories) ? data.packageCategories : [],
-  featureCodes:      Array.isArray(data?.featureCodes)      ? data.featureCodes      : [],
-  scopes:            Array.isArray(data?.scopes)            ? data.scopes            : [],
-  operations:        Array.isArray(data?.operations)        ? data.operations        : [],
+  billingPeriods: Array.isArray(data?.billingPeriods) ? data.billingPeriods : [],
+  operations: Array.isArray(data?.operations) ? data.operations : [],
+  limitTypes: Array.isArray(data?.limitTypes) ? data.limitTypes : [],
+  scopes: Array.isArray(data?.scopes) ? data.scopes : [],
 });
 
 const extractPaginated = (raw: any, items: Package[]): PackagesPaginatedResponse => ({
   packages:    items,
   currentPage: raw?.currentPage ?? raw?.number        ?? 0,
+  size:        raw?.size        ?? items.length,
   totalItems:  raw?.totalItems  ?? raw?.totalElements ?? 0,
   totalPages:  raw?.totalPages  ?? 0,
 });
 
-// Extract package list from response — backend uses "employees" key (not "packages")
 const extractPackageList = (raw: any): any[] =>
   raw?.employees ?? raw?.packages ?? raw?.content ?? [];
 

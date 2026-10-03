@@ -60,31 +60,27 @@ const EmailField = <T extends FieldValues>({
         }}
         render={({ field, fieldState: { error } }) => (
           <>
-            <div
-              className={`mt-1 block w-full px-4 py-2 border rounded-md shadow-sm 
-                ${
-                  error ? "border-red-500" : "border-gray-300"
-                } 
-                focus-within:ring-2 focus-within:ring-blue-500
-                 ${disabled ? 'bg-gray-100  opacity-70' : ''}
-                ${inputClassName}`}
-            >
-              <input
-                {...field}
-                id={name}
-                type="email"
-                placeholder={placeholder}
-                disabled={disabled}
-                className={`w-full bg-transparent outline-none ${disabled ? 'cursor-not-allowed' : ''}`}
-                onChange={(e) => {
-                  if (disabled) return;
-                  const value = e.target.value.toLowerCase();
-                  field.onChange(value);
-                  onChange?.(value);
-                }}
-                onFocus={onFocus}
-              />
-            </div>
+            <input
+              {...field}
+              id={name}
+              type="email"
+              autoComplete="email"
+              placeholder={placeholder}
+              disabled={disabled}
+              aria-invalid={!!error}
+              className={`mt-1 block w-full px-4 py-2 border ${
+                error ? "border-red-500" : "border-gray-300"
+              } rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                disabled ? 'bg-gray-100 cursor-not-allowed opacity-70' : ''
+              } ${inputClassName}`}
+              onChange={(e) => {
+                if (disabled) return;
+                const value = e.target.value.toLowerCase();
+                field.onChange(value);
+                onChange?.(value);
+              }}
+              onFocus={onFocus}
+            />
 
             {error && <Error error={error} />}
           </>

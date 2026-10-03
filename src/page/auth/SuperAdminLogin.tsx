@@ -2,7 +2,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import CampusFlowLogo from "../../assets/campusflow-logo.svg";
-import BackgroundImage from "../../assets/Image/Loginimage.png";
+import BackgroundImage from "../../assets/Image/campusflow-login-background.png";
 import TextField from "../../components/controlled/TextField";
 import Password from "../../components/controlled/Password";
 
@@ -68,44 +68,34 @@ export default function SuperAdminLoginPage() {
     "w-full px-4 py-2.5 rounded-lg bg-slate-700 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-slate-900">
-      {/* Left Section */}
-      <div className="hidden md:flex md:w-1/2 relative justify-center items-center bg-slate-700 overflow-hidden">
-        <img
-          src={BackgroundImage}
-          alt="Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
-        />
-        <img
-          src={CampusFlowLogo}
-          alt="CampusFlow"
-          className="relative z-10 w-64 lg:w-80 drop-shadow-xl"
-        />
-      </div>
+    <div className="campusflow-login relative isolate min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-slate-900">
+      <img
+        src={BackgroundImage}
+        alt=""
+        aria-hidden="true"
+        className="campusflow-login__background absolute inset-0 z-0 h-full w-full object-contain"
+      />
 
-      {/* Right Section */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-12">
+      <div className="campusflow-login__form-area relative z-10 w-full md:ml-auto md:w-1/2 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-12">
         <div className="mb-8 md:hidden">
-          <img
-            src={CampusFlowLogo}
-            alt="CampusFlow"
-            className="w-48 h-auto"
-          />
+          <img src={CampusFlowLogo} alt="CampusFlow" className="w-48 h-auto" />
         </div>
 
-        <div className="w-full max-w-md bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+        <div className="campusflow-login__card w-full max-w-md bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700">
+          <div className="mb-7">
+            <p className="campusflow-login__eyebrow mb-2 text-xs font-bold uppercase tracking-[0.16em]">
+              Welcome back
+            </p>
+            <h2 className="campusflow-login__title text-2xl sm:text-3xl font-bold">
               Super Admin Login
             </h2>
-            <p className="text-gray-400 text-sm">
+            <p className="campusflow-login__description mt-2 text-sm">
               Access the super admin dashboard
             </p>
           </div>
 
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email, Phone or Username Field */}
               <div className="mb-4">
                 <TextField
                   name="phoneOrEmail"
@@ -121,7 +111,6 @@ export default function SuperAdminLoginPage() {
                 />
               </div>
 
-              {/* Password */}
               <div className="mb-4">
                 <Password
                   name="password"
@@ -136,8 +125,7 @@ export default function SuperAdminLoginPage() {
                 />
               </div>
 
-              {/* Forgot Password */}
-              <div className="text-right">
+              <div className="text-center">
                 <Link to="/forgot-password">
                   <span className="text-xs text-gray-400 hover:text-white hover:underline transition">
                     Forgot Password?
@@ -145,7 +133,6 @@ export default function SuperAdminLoginPage() {
                 </Link>
               </div>
 
-              {/* Root Error Message */}
               {methods.formState.errors.root && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <p className="text-red-400 text-sm">
@@ -154,22 +141,20 @@ export default function SuperAdminLoginPage() {
                 </div>
               )}
 
-              {/* Login Button */}
               <div className="space-y-3 pt-2">
                 <button
                   type="submit"
                   disabled={methods.formState.isSubmitting}
-                  className="w-full py-2.5 px-4 rounded-lg shadow-md font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2.5 px-4 rounded-lg shadow-md font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {methods.formState.isSubmitting ? "Logging in..." : "Login to Super Admin"}
                 </button>
               </div>
 
-              {/* Link to School Login */}
-              <div className="text-center mt-4 pt-4 border-t border-slate-700">
+              <div className="text-center mt-4 pt-4 border-t border-gray-100">
                 <Link to="/login">
-                  <span className="text-sm text-gray-400 hover:text-white hover:underline transition">
-                     Back to School Login
+                  <span className="text-sm text-gray-500 hover:text-teal-700 hover:underline transition">
+                    Back to School Login
                   </span>
                 </Link>
               </div>

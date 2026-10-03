@@ -10,7 +10,7 @@ import { getHeaderText } from '../../../helpers/useTranslations'
 import { schoolService } from '../../../services/apis/schoolApi'
 
 interface NavbarProps {
-  toggleSidebar?: () => void
+  toggleSidebar: () => void
 }
 
 interface FormValues {
@@ -29,7 +29,7 @@ interface SchoolData {
   startDateOfWeek: string
 }
 
-const AdminNavbar: React.FC<NavbarProps> = () => {
+const AdminNavbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
   const { register, handleSubmit, reset } = useForm<FormValues>({
     defaultValues: { search: '' },
   })

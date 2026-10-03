@@ -12,8 +12,6 @@ export const packageKeys = {
     ['packages', 'paginated', page, size, sortBy, sortDirection] as const,
   filtered: (filter: FilterPackageRequestDTO, page: number, size: number) =>
     ['packages', 'filtered', filter, page, size] as const,
-  filteredCount: (filter: FilterPackageRequestDTO) =>
-    ['packages', 'filtered-count', filter] as const,
   detail: (id: number) => ['packages', 'detail', id] as const,
   subscriptionSummary: ['packages', 'subscription-summary'] as const,
   packageSummary: ['packages', 'package-summary'] as const,
@@ -51,40 +49,34 @@ export const usePackages = (sortBy?: string, sortDirection?: string) => {
   }
 }
 
-// Same 2-step pattern for filtered packages
+export const usePackagePage = (
+  page: number,
+  size: number,
+  sortBy?: string,
+  sortDirection?: string,
+) =>
+  useQuery({
+    queryKey: packageKeys.paginated(page, size, sortBy, sortDirection),
+    queryFn: () => packageService.getAll(page, size, sortBy, sortDirection),
+    staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
+  })
+
 export const useFilteredPackages = (
   filter: FilterPackageRequestDTO,
+  page: number,
+  size: number,
   sortBy?: string,
   sortDirection?: string,
   enabled = true,
 ) => {
-  // First call — get totalItems for this filter
-  const countQuery = useQuery({
-    queryKey: packageKeys.filteredCount(filter),
-    queryFn: () => packageService.filterPackages(filter, 0, 1, sortBy, sortDirection),
+  return useQuery({
+    queryKey: packageKeys.filtered(filter, page, size),
+    queryFn: () => packageService.filterPackages(filter, page, size, sortBy, sortDirection),
     enabled,
     staleTime: 30 * 1000,
     placeholderData: keepPreviousData,
   })
-
-  const totalItems = countQuery.data?.totalItems ?? 0
-
-  // Second call — fetch all filtered records
-  const allQuery = useQuery({
-    queryKey: packageKeys.filtered(filter, 0, totalItems),
-    queryFn: () => packageService.filterPackages(filter, 0, totalItems, sortBy, sortDirection),
-    enabled: enabled && totalItems > 0,
-    staleTime: 30 * 1000,
-    placeholderData: keepPreviousData,
-  })
-
-  return {
-    data: totalItems > 0 ? allQuery.data : countQuery.data,
-    isLoading: countQuery.isLoading || (totalItems > 0 && allQuery.isLoading),
-    isFetching: countQuery.isFetching || allQuery.isFetching,
-    isError: countQuery.isError || allQuery.isError,
-    error: countQuery.error ?? allQuery.error,
-  }
 }
 
 export const usePackage = (packageId: number) =>

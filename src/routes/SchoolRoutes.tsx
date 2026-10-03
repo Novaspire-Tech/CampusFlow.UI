@@ -386,13 +386,16 @@ const MainLayout = ({
     location.pathname === '/registration' ||
     location.pathname === '/super-admin/login' ||
     location.pathname === '/forgot-password'
+  const closeSidebar = () => {
+    if (window.matchMedia('(max-width: 767px)').matches) setIsSidebarOpen(false)
+  }
 
   return (
     <div className="campusflow-shell flex flex-col h-screen">
       {!isLoginPage && <Navbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />}
 
       <div className="flex flex-1 overflow-hidden">
-        {!isLoginPage && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
+        {!isLoginPage && <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />}
         <div
           className={`campusflow-content flex-1 ${isLoginPage ? 'campusflow-content--auth' : 'campusflow-page-content'}`}
         >

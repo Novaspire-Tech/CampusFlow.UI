@@ -6,7 +6,6 @@ import Button from '../../../components/controlled/Button';
 import Dropdown from '../../../components/controlled/Dropdown';
 import TextField from '../../../components/controlled/TextField';
 import ControlledTable from '../../../components/uncontrolled/ControlledTable';
-import { usePackages } from '../../../hooks/queries/superAdmin/usePackage';
 import {
   useFilterSubscriptions,
   useSubscriptionFilterOptions,
@@ -32,17 +31,6 @@ const formatDate = (raw: string | null): string => {
   });
 };
 
-interface PackageApiItem {
-  packageId: number;
-  category: string;
-  name: string;
-  billingPeriod: string;
-  totalSubscribers: number;
-  amount: number;
-  createdDate: string;
-  isActive: boolean;
-}
-
 const SubscriptionTable: React.FC = () => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -63,7 +51,6 @@ const SubscriptionTable: React.FC = () => {
     reset: resetFilter,
   } = useForm<FieldValues>({
     defaultValues: {
-      packageCategories: '',
       billingPeriod: '',
       subscriptionStatus: '',
       startDate: '',
@@ -93,11 +80,6 @@ const SubscriptionTable: React.FC = () => {
     isPending: isSuspending,
   } = useSuspendSubscription();
 
-  const { data: packagesData } = usePackages();
-
-  const allPackages: PackageApiItem[] =
-    (packagesData?.packages ?? []) as unknown as PackageApiItem[];
-
   const subscriptions =
     paginatedData?.subscriptions ?? [];
 
@@ -115,47 +97,8 @@ const SubscriptionTable: React.FC = () => {
     id: s.subscriptionId,
   }));
 
-  const packageOptions = allPackages
-    .filter(
-      (p) =>
-        !!p.name &&
-        p.name.trim() !== '' &&
-        !!p.category &&
-        p.category.trim() !== '',
-    )
-    .map((p) => ({
-      value: p.category,
-      label: p.name,
-    }));
-
-  const uniquePackageOptions = Array.from(
-    new Map(
-      packageOptions.map((option) => [
-        option.value,
-        option,
-      ]),
-    ).values(),
-  );
-
-
-  const packageCategoryToName: Record<
-    string,
-    string
-  > = {};
-
-  allPackages.forEach((p) => {
-    if (p.category && p.name) {
-      packageCategoryToName[p.category] = p.name;
-    }
-  });
-
   const handleApplyFilters = (data: FieldValues) => {
     const body: FilterSubscriptionsBody = {};
-
-    if (data.packageCategories) {
-      body.packageCategories =
-        String(data.packageCategories).trim();
-    }
 
     if (data.billingPeriod) {
       body.billingPeriod = data.billingPeriod;
@@ -185,7 +128,6 @@ const SubscriptionTable: React.FC = () => {
 
   const handleClearFilters = () => {
     resetFilter({
-      packageCategories: '',
       billingPeriod: '',
       subscriptionStatus: '',
       startDate: '',
@@ -221,12 +163,9 @@ const SubscriptionTable: React.FC = () => {
       render: (v: string) => v || '—',
     },
     {
-      key: 'packageCategory',
+      key: 'packageName',
       label: 'Packages',
-      render: (v: string) =>
-        v
-          ? packageCategoryToName[v] ?? v
-          : '—',
+      render: (v: string) => v || '—',
     },
     {
       key: 'billingPeriod',
@@ -285,6 +224,11 @@ const SubscriptionTable: React.FC = () => {
           </span>
         );
       },
+    },
+    {
+      key: 'isPaid',
+      label: 'Payment Status',
+      render: (v: boolean | null) => (v == null ? '—' : v ? 'Paid' : 'Unpaid'),
     },
     {
       key: 'actions',
@@ -372,15 +316,6 @@ const SubscriptionTable: React.FC = () => {
           )}
         >
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
-
-            <Dropdown
-              name="packageCategories"
-              label="Packages"
-              control={filterControl}
-              options={uniquePackageOptions}
-              disabled={isFilterLoading}
-              required={false}
-            />
 
             <Dropdown
               name="billingPeriod"

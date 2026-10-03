@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'react-toastify'
 import { Button, RadioButton, TextField } from '../../../components/controlled'
 import BirthDateField from '../../../components/controlled/BirthDateField'
 import Dropdown from '../../../components/controlled/Dropdown'
@@ -222,11 +223,11 @@ const SchoolDetailSubModal: React.FC<SchoolDetailSubModalProps> = ({
           databaseName: formData.databaseName.trim().toLowerCase(),
         },
       })
-      alert('School updated successfully!')
+      toast.success('School updated successfully!')
       setIsEditing(false)
       onEditSuccess()
     } catch (err: any) {
-      alert(err?.message ?? 'Something went wrong. Please try again.')
+      toast.error(err?.message ?? 'Something went wrong. Please try again.')
     }
   }
 
@@ -842,7 +843,7 @@ const SubscribeModal: React.FC<SubscribeModalProps> = ({ schoolGroupCode, packag
         dto: subForm,
         isPaid,
       })
-      alert('Package assigned successfully!')
+      toast.success('Package assigned successfully!')
       onClose()
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong.')
@@ -973,7 +974,7 @@ const LogoModal: React.FC<LogoModalProps> = ({ schoolGroupCode, onClose }) => {
     setError(null)
     try {
       await logoMutation.mutateAsync({ schoolGroupCode, logo: file })
-      alert('Logo updated successfully!')
+      toast.success('Logo updated successfully!')
       onClose()
     } catch (e: any) {
       setError(e?.message ?? 'Failed to update logo.')
@@ -1130,7 +1131,7 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             databaseName: formData.databaseName.trim().toLowerCase(),
           },
         })
-        alert('School updated successfully!')
+        toast.success('School updated successfully!')
       } else {
         await addMutation.mutateAsync({
           schoolGroupCode,
@@ -1147,13 +1148,13 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             logo: formData.logo ?? undefined,
           },
         })
-        alert('School added successfully!')
+        toast.success('School added successfully!')
       }
       reset(DEFAULT_ADD_SCHOOL_FORM)
       onSuccess()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err: any) {
-      alert(err?.message ?? 'Something went wrong. Please try again.')
+      toast.error(err?.message ?? 'Something went wrong. Please try again.')
     }
   }
 
@@ -1415,14 +1416,14 @@ const SchoolGroupPage: React.FC = () => {
             email: formData.email,
           },
         })
-        alert('School group updated successfully!')
+        toast.success('School group updated successfully!')
       } else {
         if (!formData.logo) {
-          alert('Please select a logo file.')
+          toast.warning('Please select a logo file.')
           return
         }
         if (!formData.packageId) {
-          alert('Please select a package.')
+          toast.warning('Please select a package.')
           return
         }
         await registerMutation.mutateAsync({
@@ -1438,14 +1439,14 @@ const SchoolGroupPage: React.FC = () => {
           password: formData.password ?? '',
           databaseType: formData.databaseType ?? '',
         })
-        alert('School group registered successfully!')
+        toast.success('School group registered successfully!')
       }
       reset(DEFAULT_SCHOOL_GROUP_FORM)
       setEditingCode(null)
       setActiveView('table')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err: any) {
-      alert(err?.message ?? 'Something went wrong. Please try again.')
+      toast.error(err?.message ?? 'Something went wrong. Please try again.')
     }
   }
 

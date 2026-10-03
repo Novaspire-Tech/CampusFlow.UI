@@ -52,7 +52,7 @@ const StatSkeleton: React.FC = () => (
 interface RecentSub {
   subscriptionId: number
   schoolGroupName: string
-  packageCategory: string
+  packageName: string
   billingPeriod: string
   subscriptionStatus: string
   startDate: string
@@ -115,7 +115,7 @@ const RecentSubscriptions: React.FC<{ rows: RecentSub[]; loading: boolean }> = (
                 <td className="px-6 py-3 font-medium text-gray-800 whitespace-nowrap">
                   {r.schoolGroupName || '—'}
                 </td>
-                <td className="px-6 py-3 text-gray-600">{r.packageCategory || '—'}</td>
+                <td className="px-6 py-3 text-gray-600">{r.packageName || '—'}</td>
                 <td className="px-6 py-3 text-gray-500">
                   {(r.billingPeriod ?? '').replace(/_/g, ' ')}
                 </td>

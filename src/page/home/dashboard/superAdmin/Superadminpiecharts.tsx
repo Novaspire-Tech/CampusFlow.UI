@@ -5,7 +5,6 @@ import { useSubscriptions } from "../../../../hooks/queries/superAdmin/useSubscr
 // ── Constants ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_COLORS = ["#10B981", "#F59E0B", "#EF4444"];
 const PACKAGE_COLORS      = ["#3B82F6", "#8B5CF6", "#EC4899"];
-const ALLOWED_CATEGORIES  = ["BASIC", "STANDARD", "PREMIUM"];
 
 // ── Status categorization ──────────────────────────────────────────────────
 const getStatusCategory = (s: any): "active" | "inactive" | "expired" => {
@@ -106,7 +105,7 @@ const SuperAdminPieCharts: React.FC = () => {
   const subscriptions: any[] = paginatedData?.subscriptions ?? [];
 
   let activeCount   = 0;
-  let inactiveCount = 0;
+  const inactiveCount = 0;
   let expiredCount  = 0;
 
   subscriptions.forEach((s) => {
@@ -117,15 +116,17 @@ const SuperAdminPieCharts: React.FC = () => {
   });
 
   const hasSubscriptionData = (activeCount + inactiveCount + expiredCount) > 0;
-  const categoryCounts = ALLOWED_CATEGORIES.reduce<Record<string, number>>((acc, cat) => {
-    acc[cat] = subscriptions.filter(
-      (s) => s.packageCategory?.toUpperCase().trim() === cat
-    ).length;
-    return acc;
+  const packageCounts = subscriptions.reduce<Record<string, number>>((counts, subscription) => {
+    const packageName = String(subscription.packageName ?? "").trim();
+    if (packageName) counts[packageName] = (counts[packageName] ?? 0) + 1;
+    return counts;
   }, {});
-
-  const packageSeries  = ALLOWED_CATEGORIES.map((c) => categoryCounts[c]);
+  const packageLabels = Object.keys(packageCounts);
+  const packageSeries = packageLabels.map((packageName) => packageCounts[packageName]);
   const hasPackageData = packageSeries.some((v) => v > 0);
+  const packageColors = packageLabels.map(
+    (_, index) => PACKAGE_COLORS[index % PACKAGE_COLORS.length],
+  );
 
   // ── Chart configs ─────────────────────────────────────────────────────────
   const subscriptionOptions = buildDonutOptions(
@@ -136,8 +137,8 @@ const SuperAdminPieCharts: React.FC = () => {
   );
 
   const packageOptions = buildDonutOptions(
-    ["Basic", "Standard", "Premium"],
-    PACKAGE_COLORS,
+    packageLabels,
+    packageColors,
     "Total Schools",
     "schools",
   );

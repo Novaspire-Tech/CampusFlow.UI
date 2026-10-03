@@ -102,6 +102,9 @@ const AdminMainLayout = ({
 }) => {
   const location = useLocation()
   const isAuthPage = location.pathname === '/super-admin/login' || location.pathname === '/login'
+  const closeSidebar = () => {
+    if (window.matchMedia('(max-width: 767px)').matches) setIsSidebarOpen(false)
+  }
 
   return (
     <div className="campusflow-shell flex flex-col h-screen">
@@ -109,7 +112,7 @@ const AdminMainLayout = ({
 
       <div className="flex flex-1 overflow-hidden">
         {!isAuthPage && (
-          <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          <AdminSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
         )}
 
         <div

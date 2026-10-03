@@ -14,7 +14,6 @@ export interface GetAllSubscriptionsParams {
 }
 
 export interface FilterSubscriptionsBody {
-  packageCategories?:   string;
   billingPeriod?:       string;
   subscriptionStatus?:  string;
   startDate?:           string;
@@ -40,13 +39,13 @@ const toSubscription = (item: any): Subscription => ({
   email:              String(item.email              ?? ''),
   logo:               item.logo                     ?? null,
   paymentMethod:      item.paymentMethod             ?? null,
+  packageName:        String(item.packageName        ?? ''),
   billingPeriod:      String(item.billingPeriod      ?? ''),
   subscriptionStatus: String(item.subscriptionStatus ?? ''),
   amount:             item.amount != null ? Number(item.amount) : null,
   startDate:          String(item.startDate          ?? ''),
   endDate:            String(item.endDate            ?? ''),
-  isPaid:             Boolean(item.isPaid            ?? false),
-  packageCategory:    String(item.packageCategory    ?? ''),
+  isPaid:             item.isPaid == null ? null : Boolean(item.isPaid),
 });
 
 const toPaginatedResponse = (data: any): SubscriptionPaginatedResponse => ({

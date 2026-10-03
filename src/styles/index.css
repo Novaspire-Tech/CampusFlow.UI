@@ -227,6 +227,11 @@ textarea:focus-visible {
   color: #f8fafc;
 }
 
+.campusflow-topbar select option {
+  background-color: #fff;
+  color: #24374a;
+}
+
 .campusflow-topbar select:focus {
   border-color: #58d4c0;
 }

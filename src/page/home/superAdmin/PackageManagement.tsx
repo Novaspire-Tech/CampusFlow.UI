@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import * as FaIcons from "react-icons/fa";
 import { useForm, useFieldArray } from "react-hook-form";
 import { NumberField, TextareaField } from "../../../components/controlled";
@@ -11,7 +11,7 @@ import { toast }   from "react-toastify";
 import { ControlledTable } from "../../../components/uncontrolled";
 import { confirmToast }   from "../../../helpers/confirmToast";
 import {
-  usePackages,
+  usePackagePage,
   useFilteredPackages,
   useCreatePackage,
   useUpdatePackage,
@@ -28,7 +28,6 @@ import BirthDateField from "../../../components/controlled/BirthDateField";
 
 interface PackageFilterUI {
   billingPeriod: string;
-  category:      string;
   isActive:      string;
   startDate:     string;
   endDate:       string;
@@ -43,12 +42,16 @@ interface PackageFormData {
   packageDays:  number;
   trialDays:    number;
   displayOrder: number;
-  category:     string;
   billingPeriod:string;
   features: {
-    packageFeatureCode: string;
     featureName:        string;
     description:        string;
+    scope:              string;
+    operations:         string[];
+    limitType:          string;
+    limitValue:         number;
+    unit:               string;
+    isEnabled:          boolean;
     displayOrder:       number;
   }[];
 }
@@ -57,7 +60,6 @@ interface PackageRow {
   id:               number;
   packageId:        number;
   name:             string;
-  category:         string;
   billingPeriod:    string;
   basePrice:        number;
   packageDays:      number;
@@ -70,18 +72,10 @@ interface PackageRow {
 
 const DEFAULT_FILTERS: PackageFilterUI = {
   billingPeriod: "",
-  category:      "",
   isActive:      "",
   startDate:     "",
   endDate:       "",
   search:        "",
-};
-
-const OPERATION_BADGE_COLORS: Record<string, string> = {
-  CREATE: "bg-green-100  text-green-700  border-green-200",
-  READ:   "bg-blue-100   text-blue-700   border-blue-200",
-  UPDATE: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  DELETE: "bg-red-100    text-red-600    border-red-200",
 };
 
 const OPERATION_ICONS: Record<string, string> = {
@@ -109,7 +103,6 @@ const toBackendDate = (dateStr: string): string => {
 const toBackendFilter = (f: PackageFilterUI): FilterPackageRequestDTO => {
   const dto: FilterPackageRequestDTO = {};
   if (f.billingPeriod)   dto.billingPeriod = f.billingPeriod;
-  if (f.category)        dto.category      = f.category;
   if (f.isActive !== "") dto.isActive      = f.isActive === "true";
   if (f.startDate)       dto.startDate     = toBackendDate(f.startDate);
   if (f.endDate)         dto.endDate       = toBackendDate(f.endDate);
@@ -171,9 +164,6 @@ const PackageDetailModal: React.FC<{ pkg: any; onClose: () => void }> = ({ pkg, 
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-6 space-y-6">
           <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-              <IconField name="FaTag" size={10} /> {pkg.category}
-            </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
               <IconField name="FaCalendarAlt" size={10} /> {pkg.billingPeriod?.replace(/_/g, " ")}
             </span>
@@ -210,30 +200,6 @@ const PackageDetailModal: React.FC<{ pkg: any; onClose: () => void }> = ({ pkg, 
               ))}
             </div>
           </section>
-          <section>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              <IconField name="FaShieldAlt" size={13} />
-              Operations {pkg.operations?.length > 0 ? `(${pkg.operations.length})` : ""}
-            </h3>
-            {pkg.operations?.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {pkg.operations.map((op: string) => (
-                  <span
-                    key={op}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${OPERATION_BADGE_COLORS[op] ?? "bg-indigo-50 text-indigo-700 border-indigo-100"}`}
-                  >
-                    <IconField name={OPERATION_ICONS[op] ?? "FaCircle"} size={11} />
-                    <span>{op.replace(/_/g, " ")}</span>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="flex items-center gap-2 text-sm text-gray-400 italic">
-                <IconField name="FaBan" size={13} color="#9ca3af" /> No operations assigned.
-              </p>
-            )}
-          </section>
-
           {/* Features */}
           {sortedFeatures.length > 0 && (
             <section>
@@ -250,41 +216,35 @@ const PackageDetailModal: React.FC<{ pkg: any; onClose: () => void }> = ({ pkg, 
                       {feature.displayOrder}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{feature.packageFeatureCode}</p>
+                      <p className="text-sm font-semibold text-gray-800">{feature.featureName}</p>
                       {feature.description && (
                         <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{feature.description}</p>
                       )}
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-md bg-indigo-50 px-2 py-1 text-indigo-700">
+                          {feature.scope?.replace(/_/g, " ")}
+                        </span>
+                        <span className="rounded-md bg-gray-100 px-2 py-1 text-gray-700">
+                          {feature.limitType === "NONE"
+                            ? "No limit"
+                            : `${feature.limitType}: ${feature.limitValue}${feature.unit ? ` ${feature.unit}` : ""}`}
+                        </span>
+                        {feature.operations?.map((operation: string) => (
+                          <span key={operation} className="rounded-md bg-blue-50 px-2 py-1 text-blue-700">
+                            {operation}
+                          </span>
+                        ))}
+                        <span className={`rounded-md px-2 py-1 ${feature.isEnabled ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                          {feature.isEnabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
                     </div>
-                    <IconField name="FaCheckCircle" size={14} color="#22c55e" className="mt-0.5 shrink-0" />
                   </div>
                 ))}
               </div>
             </section>
           )}
 
-          {/* Scopes */}
-          <section>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              <IconField name="FaLock" size={13} />
-              Scopes {pkg.scopes?.length > 0 ? `(${pkg.scopes.length})` : ""}
-            </h3>
-            {pkg.scopes?.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {pkg.scopes.map((scope: string) => (
-                  <span
-                    key={scope}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
-                  >
-                    <IconField name="FaKey" size={10} /> {scope.replace(/_/g, " ")}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="flex items-center gap-2 text-sm text-gray-400 italic">
-                <IconField name="FaBan" size={13} color="#9ca3af" /> No scopes assigned.
-              </p>
-            )}
-          </section>
         </div>
 
         {/* Footer */}
@@ -297,53 +257,6 @@ const PackageDetailModal: React.FC<{ pkg: any; onClose: () => void }> = ({ pkg, 
           </button>
         </div>
       </div>
-    </div>
-  );
-};
-
-const CheckboxGroup: React.FC<{
-  label: string;
-  options: string[];
-  selected: string[];
-  onChange: (v: string[]) => void;
-  loading?: boolean;
-}> = ({ label, options, selected, onChange, loading }) => {
-  const toggle = (opt: string) =>
-    onChange(selected.includes(opt) ? selected.filter((s) => s !== opt) : [...selected, opt]);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-        <IconField name="FaLock" size={13} color="#6b7280" /> {label}
-      </label>
-      {loading ? (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-400 italic">
-          <IconField name="FaSpinner" size={14} color="#9ca3af" className="animate-spin" /> Loading options...
-        </div>
-      ) : options.length === 0 ? (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-400 italic">
-          <IconField name="FaExclamationCircle" size={14} color="#9ca3af" /> No options available.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 border border-gray-200 rounded-lg p-3 bg-gray-50 max-h-52 overflow-y-auto">
-          {options.map((opt) => (
-            <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-blue-600">
-              <input
-                type="checkbox"
-                checked={selected.includes(opt)}
-                onChange={() => toggle(opt)}
-                className="accent-blue-600 w-4 h-4"
-              />
-              <span className="truncate">{opt.replace(/_/g, " ")}</span>
-            </label>
-          ))}
-        </div>
-      )}
-      {selected.length > 0 && (
-        <p className="flex items-center gap-1.5 text-xs text-gray-500">
-          <IconField name="FaCheckSquare" size={11} color="#6b7280" /> {selected.length} selected
-        </p>
-      )}
     </div>
   );
 };
@@ -418,7 +331,6 @@ const OperationsToggleGroup: React.FC<{
 interface FilterBarProps {
   control:              any;
   billingPeriodOptions: { label: string; value: string }[];
-  categoryOptions:      { label: string; value: string }[];
   isLoading:            boolean;
   onReset:              () => void;
   activeCount:          number;
@@ -427,7 +339,6 @@ interface FilterBarProps {
 const FilterBar: React.FC<FilterBarProps> = ({
   control,
   billingPeriodOptions,
-  categoryOptions,
 
 }) => (
   <div className="bg-white border border-gray-200 rounded-xl shadow-sm mb-4">
@@ -436,7 +347,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
     </div>
 
     <div className="px-5 pt-2 pb-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4">
         <div>
           <TextField name="search" label="Search" control={control} placeholder="Search packages…" />
         </div>
@@ -446,14 +357,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
             label="Billing Period"
             control={control}
             options={[...billingPeriodOptions]}
-          />
-        </div>
-        <div>
-          <Dropdown
-            name="category"
-            label="Category"
-            control={control}
-            options={[ ...categoryOptions]}
           />
         </div>
         <div>
@@ -480,14 +383,14 @@ const FilterBar: React.FC<FilterBarProps> = ({
 );
 
 const PackageManagement: React.FC = () => {
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [view,             setView            ] = useState<"table" | "form">("table");
   const [editingId,        setEditingId       ] = useState<number | null>(null);
   const [isFetchingDetail, setIsFetchingDetail] = useState(false);
   const [viewingPackage,   setViewingPackage  ] = useState<any | null>(null);
   const [isFetchingView,   setIsFetchingView  ] = useState(false);
   const [recommended,        setRecommended       ] = useState(false);
-  const [selectedScopes,     setSelectedScopes    ] = useState<string[]>([]);
-  const [selectedOperations, setSelectedOperations] = useState<string[]>([]);
 
   const {
     control: filterControl,
@@ -504,6 +407,11 @@ const PackageManagement: React.FC = () => {
     () => toBackendFilter(filterValues),
     [filterValues]
   );
+  const filterSignature = JSON.stringify(backendFilter);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterSignature]);
 
   const handleFilterReset = useCallback(() => {
     filterReset(DEFAULT_FILTERS);
@@ -514,7 +422,7 @@ const PackageManagement: React.FC = () => {
     data:       allPackagesData,
     isLoading:  isAllLoading,
     isFetching: isAllFetching,
-  } = usePackages(undefined, undefined);
+  } = usePackagePage(page, pageSize);
 
   const {
     data:       filteredPackagesData,
@@ -522,6 +430,8 @@ const PackageManagement: React.FC = () => {
     isFetching: isFilteredFetching,
   } = useFilteredPackages(
     backendFilter,
+    page,
+    pageSize,
     undefined,
     undefined,
     hasActiveFilters,
@@ -531,29 +441,45 @@ const PackageManagement: React.FC = () => {
   const isTableLoading  = hasActiveFilters ? isFilteredLoading    : isAllLoading;
   const isTableFetching = hasActiveFilters ? isFilteredFetching   : isAllFetching;
 
-  const { data: dropdownOptions, isLoading: isLoadingDropdowns } = usePackageDropdownOptions();
+  useEffect(() => {
+    const totalPages = packagesData?.totalPages ?? 0;
+    if (totalPages > 0 && page >= totalPages) setPage(totalPages - 1);
+  }, [packagesData?.totalPages, page]);
+
+  const {
+    data: dropdownOptions,
+    isLoading: isLoadingDropdowns,
+    isError: isDropdownOptionsError,
+    error: dropdownOptionsError,
+  } = usePackageDropdownOptions();
   const { mutateAsync: createPackage, isPending: isCreating     } = useCreatePackage();
   const { mutateAsync: updatePackage, isPending: isUpdating     } = useUpdatePackage();
   const { mutateAsync: deletePackage                            } = useDeletePackage();
 
   const isSubmitting = isCreating || isUpdating;
 
-  const billingPeriods    = dropdownOptions?.billingPeriods    ?? [];
-  const packageCategories = dropdownOptions?.packageCategories ?? [];
-  const featureCodes      = dropdownOptions?.featureCodes      ?? [];
-  const scopes            = dropdownOptions?.scopes            ?? [];
-  const operations        = dropdownOptions?.operations        ?? ["CREATE", "READ", "UPDATE", "DELETE"];
-
-  const toBillingPeriodOptions = billingPeriods.map((bp)    => ({ label: bp.replace(/_/g, " "),  value: bp  }));
-  const toCategoryOptions      = packageCategories.map((cat) => ({ label: cat.replace(/_/g, " "), value: cat }));
-  const toFeatureCodeOptions   = featureCodes.map((code)    => ({ label: code, value: code }));
+  const billingPeriods = dropdownOptions?.billingPeriods ?? [];
+  const limitTypes = dropdownOptions?.limitTypes ?? [];
+  const scopes = dropdownOptions?.scopes ?? [];
+  const operations = dropdownOptions?.operations ?? [];
+  const toBillingPeriodOptions = billingPeriods.map((period) => ({
+    label: period.replace(/_/g, " "),
+    value: period,
+  }));
+  const toLimitTypeOptions = limitTypes.map((limitType) => ({
+    label: limitType.replace(/_/g, " "),
+    value: limitType,
+  }));
+  const toScopeOptions = scopes.map((scope) => ({
+    label: scope.replace(/_/g, " "),
+    value: scope,
+  }));
   const tableRows: PackageRow[] = useMemo(
     () =>
       (packagesData?.packages ?? []).map((pkg) => ({
         id:               pkg.packageId,
         packageId:        pkg.packageId,
         name:             pkg.name,
-        category:         pkg.category,
         billingPeriod:    pkg.billingPeriod,
         basePrice:        pkg.basePrice,
         packageDays:      pkg.packageDays,
@@ -564,23 +490,19 @@ const PackageManagement: React.FC = () => {
       })),
     [packagesData]
   );
-  const { handleSubmit, control, reset, register } = useForm<PackageFormData>({
+  const { handleSubmit, control, reset, register, watch, setValue } = useForm<PackageFormData>({
     defaultValues: {
       name: "", description: "", basePrice: 0, setupFee: 0,
       packageDays: 0, trialDays: 0, displayOrder: 0,
-      category: "", billingPeriod: "", features: [],
+      billingPeriod: "", features: [],
     },
   });
 
   const { fields: featureFields, append: appendFeature, remove: removeFeature } =
     useFieldArray({ control, name: "features" });
-  const resetLocalState = useCallback(
-    (pkg?: { recommended?: boolean; scopes?: string[]; operations?: string[] }) => {
-      setRecommended       (pkg?.recommended ?? false);
-      setSelectedScopes    (pkg?.scopes      ?? []);
-      setSelectedOperations(pkg?.operations  ?? []);
-    }, []
-  );
+  const resetLocalState = useCallback((pkg?: { recommended?: boolean }) => {
+    setRecommended(pkg?.recommended ?? false);
+  }, []);
 
   const closeForm = useCallback(() => {
     reset();
@@ -591,12 +513,20 @@ const PackageManagement: React.FC = () => {
 
   const onSubmit = async (data: PackageFormData) => {
     const payload: CreatePackageRequestDTO = {
-      ...data,
-      basePrice:  Number(data.basePrice),
-      setupFee:   Number(data.setupFee),
+      name: data.name,
+      description: data.description,
+      basePrice: Number(data.basePrice),
+      billingPeriod: data.billingPeriod,
+      packageDays: Number(data.packageDays),
+      trialDays: Number(data.trialDays),
+      setupFee: Number(data.setupFee),
+      displayOrder: Number(data.displayOrder),
       recommended,
-      scopes:     selectedScopes,
-      operations: selectedOperations,
+      features: data.features.map((feature) => ({
+        ...feature,
+        limitValue: Number(feature.limitValue),
+        operations: feature.operations ?? [],
+      })),
     };
     try {
       if (editingId !== null) {
@@ -632,9 +562,18 @@ const PackageManagement: React.FC = () => {
         packageDays:  pkg.packageDays,
         trialDays:    pkg.trialDays,
         displayOrder: pkg.displayOrder,
-        category:     pkg.category      ?? "",
         billingPeriod:pkg.billingPeriod  ?? "",
-        features:     pkg.features       ?? [],
+        features: (pkg.features ?? []).map((feature) => ({
+          featureName: feature.featureName ?? "",
+          description: feature.description ?? "",
+          scope: feature.scope ?? "",
+          operations: feature.operations ?? [],
+          limitType: feature.limitType ?? "NONE",
+          limitValue: feature.limitValue ?? 0,
+          unit: feature.unit ?? "",
+          isEnabled: feature.isEnabled ?? true,
+          displayOrder: feature.displayOrder ?? 0,
+        })),
       });
       resetLocalState(pkg);
       setEditingId(packageId);
@@ -698,7 +637,6 @@ const PackageManagement: React.FC = () => {
 
   const columns = [
     { key: "name",             label: "Package Name"   },
-    { key: "category",         label: "Category"       },
     { key: "billingPeriod",    label: "Billing Period" },
     {
       key: "basePrice",
@@ -759,6 +697,17 @@ const PackageManagement: React.FC = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)}>
+                  {isDropdownOptionsError && (
+                    <div
+                      role="alert"
+                      className="mx-6 mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    >
+                      Failed to load package options:{" "}
+                      {dropdownOptionsError instanceof Error
+                        ? dropdownOptionsError.message
+                        : "Please try again."}
+                    </div>
+                  )}
                   <div className="p-6 space-y-10">
 
                     {/* Basic Information */}
@@ -771,14 +720,6 @@ const PackageManagement: React.FC = () => {
                           placeholder="Enter package name"
                           control={control}
                           required
-                        />
-                        <Dropdown
-                          name="category"
-                          label="Category"
-                          control={control}
-                          required
-                          options={toCategoryOptions}
-                          disabled={isLoadingDropdowns}
                         />
                         <div className="md:col-span-2">
                           <TextareaField
@@ -816,7 +757,7 @@ const PackageManagement: React.FC = () => {
                           control={control}
                           required
                           options={toBillingPeriodOptions}
-                          disabled={isLoadingDropdowns}
+                          disabled={isLoadingDropdowns || isDropdownOptionsError}
                         />
                       </div>
                     </section>
@@ -828,21 +769,6 @@ const PackageManagement: React.FC = () => {
                         <NumberField name="packageDays" label="Package Days" placeholder="Enter package days" control={control} required />
                         <NumberField name="trialDays"   label="Trial Days"   placeholder="Enter trial days"   control={control} required />
                       </div>
-                    </section>
-
-                    {/* Operations */}
-                    <section className="space-y-4">
-                      <SectionHeader iconName="FaShieldAlt" title="Operations" />
-                      <p className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <IconField name="FaInfoCircle" size={13} color="#9ca3af" />
-                        Select the operations allowed for this package.
-                      </p>
-                      <OperationsToggleGroup
-                        options={operations}
-                        selected={selectedOperations}
-                        onChange={setSelectedOperations}
-                        loading={isLoadingDropdowns}
-                      />
                     </section>
 
                     {/* Features */}
@@ -858,9 +784,14 @@ const PackageManagement: React.FC = () => {
                           type="button"
                           onClick={() =>
                             appendFeature({
-                              packageFeatureCode: "",
                               featureName:        "",
                               description:        "",
+                              scope:              "",
+                              operations:         [],
+                              limitType:          "NONE",
+                              limitValue:         0,
+                              unit:               "",
+                              isEnabled:          true,
                               displayOrder:       featureFields.length,
                             })
                           }
@@ -887,41 +818,79 @@ const PackageManagement: React.FC = () => {
                               <IconField name="FaTrash" size={11} /> Remove
                             </button>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <Dropdown
-                                name={`features.${index}.packageFeatureCode`}
-                                label="Feature Code"
-                                control={control}
-                                required
-                                options={toFeatureCodeOptions}
-                                disabled={isLoadingDropdowns}
-                              />
                               <TextField name={`features.${index}.featureName`} label="Feature Name" placeholder="Enter feature name" control={control} required />
                               <TextField name={`features.${index}.description`} label="Description"  placeholder="Enter description"  control={control} />
+                              <Dropdown
+                                name={`features.${index}.scope`}
+                                label="Scope"
+                                control={control}
+                                required
+                                options={toScopeOptions}
+                                disabled={isLoadingDropdowns || isDropdownOptionsError}
+                              />
+                              <Dropdown
+                                name={`features.${index}.limitType`}
+                                label="Limit Type"
+                                control={control}
+                                required
+                                options={toLimitTypeOptions}
+                                disabled={isLoadingDropdowns || isDropdownOptionsError}
+                              />
+                              <div className="flex flex-col gap-1">
+                                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                                  <IconField name="FaShieldAlt" size={12} color="#6b7280" /> Allowed Operations
+                                </label>
+                                <OperationsToggleGroup
+                                  options={operations}
+                                  selected={watch(`features.${index}.operations`) ?? []}
+                                  onChange={(value) =>
+                                    setValue(`features.${index}.operations`, value, { shouldDirty: true })
+                                  }
+                                  loading={isLoadingDropdowns}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                                  <IconField name="FaSortNumericDown" size={12} color="#6b7280" /> Limit Value
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  {...register(`features.${index}.limitValue`, {
+                                    valueAsNumber: true,
+                                    min: 0,
+                                  })}
+                                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <TextField name={`features.${index}.unit`} label="Unit" placeholder="e.g. students, GB" control={control} />
                               <div className="flex flex-col gap-1">
                                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                                   <IconField name="FaSortNumericDown" size={12} color="#6b7280" /> Display Order
                                 </label>
                                 <input
                                   type="number"
-                                  {...register(`features.${index}.displayOrder`, { valueAsNumber: true })}
+                                  min={0}
+                                  {...register(`features.${index}.displayOrder`, {
+                                    valueAsNumber: true,
+                                    min: 0,
+                                  })}
                                   placeholder="0"
                                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                               </div>
+                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  {...register(`features.${index}.isEnabled`)}
+                                  className="accent-blue-600 w-4 h-4"
+                                />
+                                Feature enabled
+                              </label>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </section>
-                    <section className="space-y-4">
-                      <SectionHeader iconName="FaLock" title="Scopes" />
-                      <CheckboxGroup
-                        label="Select Scopes"
-                        options={scopes}
-                        selected={selectedScopes}
-                        onChange={setSelectedScopes}
-                        loading={isLoadingDropdowns}
-                      />
                     </section>
                     <section className="space-y-6">
                       <SectionHeader iconName="FaCog" title="Display Settings" />
@@ -963,7 +932,7 @@ const PackageManagement: React.FC = () => {
                       <Button
                         name={isSubmitting ? "Saving..." : editingId ? "Update Package" : "Save Package"}
                         loading={isSubmitting}
-                        isDisable={isSubmitting}
+                        isDisable={isSubmitting || isLoadingDropdowns || isDropdownOptionsError}
                         type="submit"
                         showAlways = {true}
                         icon={
@@ -984,7 +953,6 @@ const PackageManagement: React.FC = () => {
             <FilterBar
               control={filterControl}
               billingPeriodOptions={toBillingPeriodOptions}
-              categoryOptions={toCategoryOptions}
               isLoading={isTableFetching}
               onReset={handleFilterReset}
               activeCount={activeFilterCount}
@@ -1009,6 +977,16 @@ const PackageManagement: React.FC = () => {
               actionColumn={true}
               showSelectAll={true}
               showPaginationFooter={true}
+              serverPage={packagesData?.currentPage ?? page}
+              serverTotalPages={packagesData?.totalPages ?? 0}
+              serverTotalItems={packagesData?.totalItems ?? 0}
+              serverPageSize={packagesData?.size ?? pageSize}
+              onServerPageChange={setPage}
+              onServerPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(0);
+              }}
+              loading={isTableFetching}
               emptyMessage={
                 isTableLoading
                   ? "Loading packages..."

@@ -5,13 +5,13 @@ export interface Subscription {
   email: string
   logo: string | null
   paymentMethod: string | null
+  packageName: string
   billingPeriod: string
   subscriptionStatus: string
   amount: number | null
   startDate: string
   endDate: string
-  isPaid: boolean
-  packageCategory: string
+  isPaid: boolean | null
 }
 
 export interface SubscriptionPaginatedResponse {
@@ -39,7 +39,6 @@ export interface SubscriptionFilterOptionsApiResponse {
 }
 
 export interface FilterSubscriptionsBody {
-  packageCategories?: string
   billingPeriod?: string
   subscriptionStatus?: string
   startDate?: string

@@ -1,9 +1,27 @@
 export interface PackageFeature {
-  packageFeatureId?:  number;
-  packageFeatureCode: string;
-  featureName:        string;
-  description:        string;
-  displayOrder:       number;
+  packageFeatureId?: number;
+  packageFeatureCode?: string;
+  featureName: string;
+  description?: string;
+  scope: string;
+  operations: string[];
+  limitType: string;
+  limitValue: number;
+  unit?: string;
+  isEnabled: boolean;
+  displayOrder: number;
+}
+
+export interface CreatePackageFeatureDTO {
+  featureName: string;
+  description: string;
+  scope: string;
+  operations: string[];
+  limitType: string;
+  limitValue: number;
+  unit: string;
+  isEnabled: boolean;
+  displayOrder: number;
 }
 
 export interface Package {
@@ -29,20 +47,16 @@ export interface Package {
 }
 
 export interface CreatePackageRequestDTO {
-  category:      string;
-  name:          string;
-  description:   string;
-  basePrice:     number;
+  name: string;
+  description: string;
+  basePrice: number;
   billingPeriod: string;
-  packageDays:   number;
-  trialDays:     number;
-  setupFee?:     number | null;
-  displayOrder?: number;
-  recommended?:  boolean;
-  isActive?:     boolean;
-  features?:     PackageFeature[];
-  scopes?:       string[];
-  operations?:   string[];
+  packageDays: number;
+  trialDays: number;
+  setupFee: number;
+  displayOrder: number;
+  recommended: boolean;
+  features: CreatePackageFeatureDTO[];
 }
 export interface FilterPackageRequestDTO {
   billingPeriod?: string | null;
@@ -56,6 +70,7 @@ export interface FilterPackageRequestDTO {
 export interface PackagesPaginatedResponse {
   packages:    Package[];
   currentPage: number;
+  size:        number;
   totalItems:  number;
   totalPages:  number;
 }
@@ -73,9 +88,8 @@ export interface PackageSummary {
 }
 
 export interface PackageDropdownOptions {
-  billingPeriods:    string[];
-  packageCategories: string[];
-  featureCodes:      string[];
-  scopes:            string[];
-  operations:        string[];
+  billingPeriods: string[];
+  operations: string[];
+  limitTypes: string[];
+  scopes: string[];
 }
