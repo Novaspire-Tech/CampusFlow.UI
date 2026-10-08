@@ -1,15 +1,20 @@
 import React from 'react'
-import { useController, type Control } from 'react-hook-form'
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form'
 import Label from '../Label'
 import Error from './Error'
 
-interface UniversalTextFieldProps extends Omit<
+interface UniversalTextFieldProps<T extends FieldValues> extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'onChange'
 > {
   name: string
   label?: string
-  control: Control<any>
+  control: Control<T>
   required?: boolean
   labelClassName?: string
   inputClassName?: string
@@ -17,7 +22,7 @@ interface UniversalTextFieldProps extends Omit<
   disabled?: boolean
 }
 
-const UniversalTextField: React.FC<UniversalTextFieldProps> = ({
+const UniversalTextField = <T extends FieldValues>({
   name,
   label,
   control,
@@ -27,13 +32,16 @@ const UniversalTextField: React.FC<UniversalTextFieldProps> = ({
   onChange,
   disabled = false,
   ...rest
-}) => {
+}: UniversalTextFieldProps<T>) => {
  const validationRules = {
   ...(required && {
     required: `${label} is required`,
   }),
     validate: (value: string) => {
-      if (/[\u0000-\u001F\u007F]/.test(value)) {
+      if ([...value].some((character) => {
+        const code = character.charCodeAt(0)
+        return code <= 0x1f || code === 0x7f
+      })) {
         return 'Invalid characters are not allowed'
       }
       if (/^#+(\s+#+)*$/.test(value.trim())) {
@@ -47,7 +55,7 @@ const UniversalTextField: React.FC<UniversalTextFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: validationRules,
   })

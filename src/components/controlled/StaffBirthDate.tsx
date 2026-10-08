@@ -1,13 +1,18 @@
 import React from "react";
-import { useController, type Control } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
 import Error from "./Error";
 
-interface BirthDateFieldProps
+interface BirthDateFieldProps<T extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   showError?: boolean;
   errorMessage?: string;
@@ -49,7 +54,7 @@ const toComparableDate = (value: string): string => {
   return value;
 };
 
-const StaffBirthDate: React.FC<BirthDateFieldProps> = ({
+const StaffBirthDate = <T extends FieldValues>({
   name,
   label,
   control,
@@ -59,7 +64,7 @@ const StaffBirthDate: React.FC<BirthDateFieldProps> = ({
   errorMessage = "Must be at least 21 years old",
   placeholder = "mm/dd/yyyy",
   ...rest
-}) => {
+}: BirthDateFieldProps<T>) => {
   const minDateString = React.useMemo(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 21);
@@ -73,7 +78,7 @@ const StaffBirthDate: React.FC<BirthDateFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: {
       required: required ? `${label || "Date"} is required` : false,

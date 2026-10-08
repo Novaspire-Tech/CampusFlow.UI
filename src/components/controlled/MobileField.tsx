@@ -1,25 +1,30 @@
 import React from "react";
-import { useController, type Control } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
 import Error from "./Error";
 import { Mobile_Field } from "../../constants/RegexPattern";
  
-interface MobileFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface MobileFieldProps<T extends FieldValues> extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   disabled?: boolean;
 }
  
-const MobileField: React.FC<MobileFieldProps> = ({
+const MobileField = <T extends FieldValues>({
   name,
   label = "Mobile Number",
   control,
   required = false,
   disabled = false,
   ...rest
-}) => {
+}: MobileFieldProps<T>) => {
   const rules = {
     ...(required && { required: `${label} is required` }),
     pattern: {
@@ -32,7 +37,7 @@ const MobileField: React.FC<MobileFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules,
   });

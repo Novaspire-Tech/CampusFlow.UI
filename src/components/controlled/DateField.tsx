@@ -1,14 +1,19 @@
-import React, { useEffect } from "react";
-import { useController, type Control } from "react-hook-form";
+import { useEffect } from "react";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
 import Error from "./Error";
 import { useTranslation } from "react-i18next";
 import { getPagesDataText } from "../../helpers/useTranslations";
 
-interface DateFieldProps {
+interface DateFieldProps<T extends FieldValues> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   disabled?: boolean;
   onlyToday?: boolean;
@@ -40,7 +45,7 @@ const getTodayDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-const DateField: React.FC<DateFieldProps> = ({
+const DateField = <T extends FieldValues>({
   name,
   label,
   control,
@@ -49,7 +54,7 @@ const DateField: React.FC<DateFieldProps> = ({
   onlyToday = false,
   defaultToday = true,
   ...rest
-}) => {
+}: DateFieldProps<T>) => {
   const { t } = useTranslation();
   const translations = getPagesDataText(t);
   const today = getTodayDate();
@@ -57,7 +62,7 @@ const DateField: React.FC<DateFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: {
       required: required ? translations.Date_is_required : false,

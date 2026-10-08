@@ -209,7 +209,7 @@ export default function LoginPage() {
                               ? 'Unable to load schools'
                               : 'Search schools by name or code'
                         }
-                        disabled={isSchoolsLoading || isSchoolsError || schools.length === 0}
+                        disabled={isSchoolsLoading || isSchoolsError || (schools?.length ?? 0) === 0}
                         aria-autocomplete="list"
                         aria-expanded={isSchoolListOpen && filteredSchools.length > 0}
                         aria-controls="school-options"

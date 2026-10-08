@@ -1,20 +1,25 @@
 import React from "react";
-import { useController, type Control } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
 import Error from "./Error";
 
-interface FutureDateFieldProps
+interface FutureDateFieldProps<T extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   showError?: boolean;
   errorMessage?: string;
   disabled?: boolean; 
 }
 
-const FutureDateField: React.FC<FutureDateFieldProps> = ({
+const FutureDateField = <T extends FieldValues>({
   name,
   label,
   control,
@@ -23,14 +28,14 @@ const FutureDateField: React.FC<FutureDateFieldProps> = ({
   errorMessage = "Date cannot be in the past",
   disabled = false, 
   ...rest
-}) => {
+}: FutureDateFieldProps<T>) => {
   const today = new Date().toISOString().split("T")[0];
 
   const {
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: {
       ...(required ? { required: "Date is required" } : {}),

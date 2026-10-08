@@ -49,6 +49,23 @@ export const usePackages = (sortBy?: string, sortDirection?: string) => {
   }
 }
 
+export const useAllPackages = (enabled = true) =>
+  useQuery({
+    queryKey: [...packageKeys.all, 'all-pages'],
+    queryFn: () => packageService.getAllPages(),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+
+export const useBestSellingPackages = () =>
+  useQuery({
+    queryKey: [...packageKeys.all, 'best-selling'],
+    queryFn: () => packageService.getBestSelling(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+
 export const usePackagePage = (
   page: number,
   size: number,

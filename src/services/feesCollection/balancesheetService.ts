@@ -32,8 +32,14 @@ const fetchAndDownload = async (
         responseType: "blob",
     });
 
-    const contentType = response.headers["content-type"] ?? "";
-    const contentDisposition = response.headers["content-disposition"] ?? "";
+    const contentTypeHeader = response.headers["content-type"];
+    const contentDispositionHeader = response.headers["content-disposition"];
+    const contentType =
+        typeof contentTypeHeader === "string" ? contentTypeHeader : "";
+    const contentDisposition =
+        typeof contentDispositionHeader === "string"
+            ? contentDispositionHeader
+            : "";
 
     if (
         contentType.includes("application/octet-stream") ||

@@ -87,6 +87,8 @@ import GenerateStaffIDCard from '../page/home/certificate/GenerateStaffIDCard'
 import ManageAlu from '../page/home/alumni/ManageAlumni'
 import Events from '../page/home/alumni/Events'
 import SessionSetting from '../page/home/systemSettinds/SessionSetting'
+import MarketingHome from '../page/public/MarketingHome'
+import PackageDetails from '../page/home/systemSettinds/PackageDetails'
 import Users from '../page/home/systemSettinds/users/Users'
 import Dashboard from '../page/home/dashboard/Student/Dashboard'
 import PageNotFound from '../common/PageNotFound'
@@ -365,7 +367,7 @@ const MainLayout = ({
           <Routes>
             {/*  Public Routes  */}
             <Route path="/login" element={<PublicRoute element={<LoginPage />} />} />
-            <Route path="/" element={<PublicRoute element={<LoginPage />} />} />
+            <Route path="/" element={<MarketingHome />} />
             <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
             <Route path="/registration" element={<RegistrationPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -1419,6 +1421,10 @@ const MainLayout = ({
                   scope="SESSION_SETTING"
                 />
               }
+            />
+            <Route
+              path="/package-details"
+              element={<ProtectedRoute element={<PackageDetails />} path="/package-details" />}
             />
             <Route
               path="/users"

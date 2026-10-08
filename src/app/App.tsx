@@ -34,7 +34,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <Router basename={import.meta.env.BASE_URL}>
           <ToastContainer position="top-right" autoClose={3000} />
           <AppContent />
         </Router>

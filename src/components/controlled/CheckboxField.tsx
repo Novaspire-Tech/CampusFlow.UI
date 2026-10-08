@@ -1,26 +1,32 @@
 import React from 'react';
-import { Controller, type Control } from 'react-hook-form';
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form';
 import Label from '../Label';
 import Error from './Error';
 
-interface CheckboxFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface CheckboxFieldProps<T extends FieldValues>
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
 }
 
-const CheckboxField: React.FC<CheckboxFieldProps> = ({
+const CheckboxField = <T extends FieldValues>({
   name,
   label,
   control,
   required = false,
   ...rest
-}) => {
+}: CheckboxFieldProps<T>) => {
   return (
     <div className="mb-2">
       <Controller
-        name={name}
+        name={name as FieldPath<T>}
         control={control}
         rules={required ? { required: `${label} is required` } : {}}
         render={({ field, fieldState }) => (

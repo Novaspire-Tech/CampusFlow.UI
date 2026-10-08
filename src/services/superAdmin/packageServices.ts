@@ -15,6 +15,7 @@ const PACKAGE_ENDPOINTS = {
   UPDATE:(id: number) => `/packages/${id}/update`,
   DELETE:(id: number) => `/packages/${id}/delete`,
   GET_ALL:              "/packages/getAll",
+  BEST_SELLING:         "/packages/best-selling",
   FILTER:               "/packages/filter-packages",
   SUBSCRIPTION_SUMMARY: "/packages/subscriptions-summary",
   PACKAGE_SUMMARY:      "/packages/package-summery",
@@ -48,7 +49,7 @@ const transformResponseToPackage = (item: any): Package => {
     features: Array.isArray(item.features)
       ? item.features.map((f: any) => ({
           packageFeatureId:   f.packageFeatureId   ?? undefined,
-          packageFeatureCode: f.packageFeatureCode ?? "",
+          packageFeatureCode: f.packageFeatureCode ?? f.featureCode ?? "",
           featureName:        f.featureName        ?? "",
           description:        f.description        ?? "",
           scope:              f.scope              ?? "",
@@ -85,7 +86,44 @@ const extractPaginated = (raw: any, items: Package[]): PackagesPaginatedResponse
 const extractPackageList = (raw: any): any[] =>
   raw?.employees ?? raw?.packages ?? raw?.content ?? [];
 
+interface BestSellingPackageResponse {
+  rank: number
+  salesCount: number
+  packageDetails: unknown
+}
+
 export const packageService = {
+
+  getBestSelling: async (): Promise<Package[]> => {
+    const response = await AxiosFunc.Get(
+      PACKAGE_ENDPOINTS.BEST_SELLING,
+      undefined,
+      { _skipAuthRedirect: true },
+    )
+    if (response.data?.status !== 200)
+      throw new Error(response.data?.message || 'Failed to fetch best-selling packages')
+
+    const data: unknown = response.data?.data
+    const items: unknown = Array.isArray(data)
+      ? data
+      : data !== null && typeof data === 'object'
+        ? ((data as Record<string, unknown>).packages ??
+          (data as Record<string, unknown>).bestSellingPackages ??
+          (data as Record<string, unknown>).content)
+        : null
+
+    if (!Array.isArray(items)) throw new Error('Invalid best-selling packages response')
+    return items.map((item: unknown) => {
+      if (item === null || typeof item !== 'object')
+        throw new Error('Invalid best-selling package entry')
+
+      const result = item as Partial<BestSellingPackageResponse>
+      if (!result.packageDetails || typeof result.packageDetails !== 'object')
+        throw new Error('Best-selling package details are missing')
+
+      return transformResponseToPackage(result.packageDetails)
+    })
+  },
 
   // Step 1: fetch page=0,size=1 to get totalItems
   // Step 2: caller uses totalItems to fetch all records
@@ -111,6 +149,17 @@ export const packageService = {
     } catch (error: any) {
       throw new Error(error.response?.data?.message || error.message || "Failed to fetch packages");
     }
+  },
+
+  getAllPages: async (): Promise<PackagesPaginatedResponse> => {
+    const pageSize = 10;
+    const firstPage = await packageService.getAll(0, pageSize);
+    const packages = [...firstPage.packages];
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await packageService.getAll(page, pageSize);
+      packages.push(...response.packages);
+    }
+    return { ...firstPage, packages, currentPage: 0 };
   },
 
   filterPackages: async (

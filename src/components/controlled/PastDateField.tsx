@@ -1,14 +1,19 @@
 import React, { useEffect } from "react";
-import { useController, type Control } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import Label from "../Label";
 import Error from "./Error";
 import { getPagesDataText } from "../../helpers/useTranslations";
 
-interface PastDateFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface PastDateFieldProps<T extends FieldValues> extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   disabled?: boolean;
   autoFillToday?: boolean;
@@ -16,7 +21,7 @@ interface PastDateFieldProps extends React.InputHTMLAttributes<HTMLInputElement>
 
 const getTodayDate = (): string => new Date().toISOString().split("T")[0];
 
-const PastDateField: React.FC<PastDateFieldProps> = ({
+const PastDateField = <T extends FieldValues>({
   name,
   label,
   control,
@@ -24,7 +29,7 @@ const PastDateField: React.FC<PastDateFieldProps> = ({
   disabled = false,
   autoFillToday = true,
   ...rest
-}) => {
+}: PastDateFieldProps<T>) => {
   const { t } = useTranslation();
   const translations = getPagesDataText(t);
   const today = getTodayDate();
@@ -33,13 +38,15 @@ const PastDateField: React.FC<PastDateFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: {
       required: required ? translations.Date_is_required : false,
       validate: (value) => {
-        if (!value && !required) return true;
-        return value <= today || "Date cannot be in the future";
+        const fieldValue: unknown = value;
+        if (!fieldValue && !required) return true;
+        if (typeof fieldValue !== "string") return "Enter a valid date";
+        return fieldValue <= today || "Date cannot be in the future";
       },
     },
   });

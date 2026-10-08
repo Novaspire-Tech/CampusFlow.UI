@@ -7,8 +7,11 @@ export const fetchDocumentBlob = async (documentPath: string) => {
 
   const response = await AxiosFunc.GetFile(`/${documentPath}`);
 
+  const responseContentType = response.headers["content-type"];
   const contentType =
-    response.headers["content-type"] || "application/octet-stream";
+    typeof responseContentType === "string"
+      ? responseContentType
+      : "application/octet-stream";
 
   return new Blob([response.data], { type: contentType });
 };

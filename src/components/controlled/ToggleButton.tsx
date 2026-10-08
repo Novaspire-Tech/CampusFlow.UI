@@ -1,25 +1,29 @@
-import React from "react";
-import { Controller, type Control } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Error from "./Error";
 import Label from "../Label";
 
-interface ToggleButtonProps {
+interface ToggleButtonProps<T extends FieldValues> {
   name: string;
   label?: string;
-  control?: Control<any>; 
+  control?: Control<T>;
   required?: boolean;
   value?: boolean;
   onChange?: (value: boolean) => void;
 }
 
-const ToggleButton: React.FC<ToggleButtonProps> = ({
+const ToggleButton = <T extends FieldValues = FieldValues>({
   name,
   label,
   control,
   required = false,
   value,
   onChange,
-}) => {
+}: ToggleButtonProps<T>) => {
   const inputId = `toggle-${name}`;
 
   const renderToggle = (checked: boolean, onToggle: () => void) => (
@@ -57,7 +61,7 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
 
       {control ? (
         <Controller
-          name={name}
+          name={name as FieldPath<T>}
           control={control}
           render={({ field, fieldState: { error } }) => (
             <div className="flex flex-col items-start gap-1">

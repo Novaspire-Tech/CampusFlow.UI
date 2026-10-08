@@ -1,31 +1,36 @@
-import React, {type InputHTMLAttributes } from 'react';
-import { Controller,type Control } from 'react-hook-form';
+import { type InputHTMLAttributes } from 'react';
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form';
 import { FiLink } from 'react-icons/fi';
 import { URL_REGEX } from '../../constants/RegexPattern'; 
 import Error from './Error';
 import Label from '../Label';
-interface URLInputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface URLInputProps<T extends FieldValues> extends InputHTMLAttributes<HTMLInputElement> {
   name: string;
-  control: Control<any>;
+  control: Control<T>;
   label?: string;
   required?: boolean;
 }
 
-const URLInput: React.FC<URLInputProps> = ({
+const URLInput = <T extends FieldValues>({
   name,
   control,
   label = 'URL',
   required = false,
   placeholder = 'https://example.com',
   ...rest
-}) => {
+}: URLInputProps<T>) => {
   return (
     <div className="mb-4">
           {label && (
         <Label label={label} required={required} labelClassName="mb-1" />
       )}
       <Controller
-        name={name}
+        name={name as FieldPath<T>}
         control={control}
         rules={{
           pattern: {

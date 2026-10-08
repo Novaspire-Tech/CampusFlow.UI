@@ -497,6 +497,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         },
         { name: GroupUserText, path: '/group-user', scope: 'SYSTEM_SETTINGS' },
         { name: SchoolGroupRolesText, path: '/school-group-roles', scope: 'SYSTEM_SETTINGS' },
+        { name: 'Package Details', path: '/package-details' },
         { name: UsersText, path: '/users', scope: 'SYSTEM_SETTINGS' },
         { name: UserActivityText, path: '/user-activity', scope: 'SYSTEM_SETTINGS' },
       ],

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type ChangeEvent } from 'react'
+import { useState, useMemo, useEffect, type ChangeEvent, type FormEvent } from 'react'
 import { useForm, type SubmitHandler, useFieldArray, type Control } from 'react-hook-form'
 import { Button, Dropdown, NumberField } from '../../../components/controlled'
 import ControlledTable from '../../../components/uncontrolled/ControlledTable'
@@ -715,7 +715,7 @@ const MarksManagement = () => {
         <div className="p-4 space-y-4">
           <AllSchoolDropdown
             queryKeys={['students', 'marksManagements', 'examSchedules', 'examGroupsByClass']}
-            onSubmit={(e) => {
+            onSubmit={(e: FormEvent) => {
               e.preventDefault()
               handleSearchSubmit(onSearchSubmit)()
             }}

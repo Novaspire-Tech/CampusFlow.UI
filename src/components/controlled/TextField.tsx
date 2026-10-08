@@ -1,14 +1,19 @@
 import React from 'react';
-import { useController, type Control } from 'react-hook-form';
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form';
 import { Text_Field } from '../../constants/RegexPattern';
 import Label from '../Label';
 import Error from './Error';
 
-interface TextFieldProps
+interface TextFieldProps<T extends FieldValues>
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   labelClassName?: string;
   inputClassName?: string;
@@ -20,7 +25,7 @@ interface TextFieldProps
   disabled?: boolean; 
 }
 
-const TextField: React.FC<TextFieldProps> = ({
+const TextField = <T extends FieldValues>({
   name,
   label,
   control,
@@ -30,7 +35,7 @@ const TextField: React.FC<TextFieldProps> = ({
   onChange,
   disabled = false, 
   ...rest
-}) => {
+}: TextFieldProps<T>) => {
   const validationRules = {
     ...(required && { required: `${label} is required` }),
     pattern: {
@@ -43,7 +48,7 @@ const TextField: React.FC<TextFieldProps> = ({
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: validationRules,
   });

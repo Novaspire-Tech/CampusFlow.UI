@@ -1,15 +1,24 @@
-import React, {useState,useRef,type ChangeEvent,type DragEvent,} from "react";
-import { Controller, type Control } from "react-hook-form";
+import { useState, useRef, type ChangeEvent, type DragEvent } from "react";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import logoValidate from "../../common/logoValidate";
 import Error from "./Error";
 
-interface LogoProps {
+interface LogoProps<T extends FieldValues> {
   name: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ name, control, required = false }) => {
+const Logo = <T extends FieldValues>({
+  name,
+  control,
+  required = false,
+}: LogoProps<T>) => {
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -38,7 +47,7 @@ const Logo: React.FC<LogoProps> = ({ name, control, required = false }) => {
   return (
     <div className="flex flex-col gap-3 mb-2 mt-2">
       <Controller
-        name={name}
+        name={name as FieldPath<T>}
         control={control}
         rules={{ validate: logoValidate(required) }}
         render={({

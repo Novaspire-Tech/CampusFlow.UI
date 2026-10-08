@@ -12,7 +12,9 @@ const SNAPSHOT_KEYS = ['schoolCode', 'schoolName', 'isAllSchools'] as const
 
 interface AllSchoolDropdownProps {
   children: React.ReactNode
-  onSubmit: (e: React.FormEvent) => void | Promise<void>
+  onSubmit:
+    | ((e: React.FormEvent) => void | Promise<void>)
+    | ((e?: React.BaseSyntheticEvent) => unknown | Promise<unknown>)
   onSchoolChange?: () => void 
   queryKeys?: string[]    
   className?: string      
@@ -145,7 +147,8 @@ const AllSchoolDropdown: React.FC<AllSchoolDropdownProps> = ({
     }
 
     try {
-      await onSubmit(e)
+      const submit = onSubmit as (event: React.FormEvent) => void | Promise<void>
+      await submit(e)
     } finally {
       if (isAllSchools && snapshotSaved.current) {
         restoreSnapshot()

@@ -1,31 +1,37 @@
 import React from "react";
-import { useController, type Control } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldPathValue,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
 import Error from "./Error";
 import { IFSC_Code } from "../../constants/RegexPattern";
 
-interface IFSCInputFieldProps
+interface IFSCInputFieldProps<T extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
   label?: string;
-  control: Control<any>;
+  control: Control<T>;
   placeholder?: string;
   required?: boolean;
 }
 
-const IFSCInputField: React.FC<IFSCInputFieldProps> = ({
+const IFSCInputField = <T extends FieldValues>({
   name,
   label,
   control,
   placeholder = "Eg: SBIN0000123",
   required = false,
   ...props
-}) => {
+}: IFSCInputFieldProps<T>) => {
   const {
     field,
     fieldState: { error },
   } = useController({
-    name,
+    name: name as FieldPath<T>,
     control,
     rules: {
       required: required ? "IFSC code is required" : false,
@@ -33,12 +39,14 @@ const IFSCInputField: React.FC<IFSCInputFieldProps> = ({
         value: IFSC_Code,
         message: "Invalid IFSC format (eg: ABCD0123456)",
       },
-      validate: (value: string) => {
-        if (!value) return true;
-        return value.length === 11 || "IFSC must be 11 characters";
+      validate: (value) => {
+        const fieldValue: unknown = value;
+        if (!fieldValue) return true;
+        if (typeof fieldValue !== "string") return "Invalid IFSC format (eg: ABCD0123456)";
+        return fieldValue.length === 11 || "IFSC must be 11 characters";
       },
     },
-    defaultValue: "",
+    defaultValue: "" as FieldPathValue<T, FieldPath<T>>,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

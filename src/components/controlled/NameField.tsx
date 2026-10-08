@@ -1,21 +1,24 @@
-import React from "react";
-import { Controller } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Label from "../Label";
-import { type Control } from "react-hook-form";
 import Error from "./Error";
 import nameValidate from "../../common/nameValidate";
-interface NameFieldProps {
+interface NameFieldProps<T extends FieldValues> {
   name: string;
   label?: string;
   placeholder?: string;
   required?: boolean;
-  control: Control<any>;
+  control: Control<T>;
   pattern?: RegExp;
   patternMessage?: string;
   disabled?: boolean;
 }
 
-const NameField: React.FC<NameFieldProps> = ({
+const NameField = <T extends FieldValues>({
   name,
   label,
   placeholder,
@@ -25,7 +28,7 @@ const NameField: React.FC<NameFieldProps> = ({
   required = false,
   disabled = false, 
   ...rest
-}) => {
+}: NameFieldProps<T>) => {
 
   return (
     <div className="mb-2">
@@ -33,7 +36,7 @@ const NameField: React.FC<NameFieldProps> = ({
         <Label label={label} required={required} labelClassName="mb-1" />
       )}
       <Controller
-        name={name}
+        name={name as FieldPath<T>}
         control={control}
         rules={nameValidate({
           required,

@@ -437,8 +437,11 @@ export const feeTransactionService = {
         { responseType: 'blob' },
       )
 
-      const contentType: string        = response.headers['content-type'] ?? ''
-      const contentDisposition: string = response.headers['content-disposition'] ?? ''
+      const contentTypeHeader = response.headers['content-type']
+      const contentDispositionHeader = response.headers['content-disposition']
+      const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : ''
+      const contentDisposition =
+        typeof contentDispositionHeader === 'string' ? contentDispositionHeader : ''
 
 
       if (

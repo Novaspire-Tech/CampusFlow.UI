@@ -1,5 +1,9 @@
-import React from "react";
-import { Controller, type Control } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Error from "./Error";
 import Label from "../Label";
 import { useTranslation } from "react-i18next";
@@ -7,9 +11,9 @@ import { getPagesDataText } from "../../helpers/useTranslations";
  
 type Option = string | { label: string; value: string | number };
  
-interface DropdownProps {
+interface DropdownProps<T extends FieldValues> {
   name: string;
-  control: Control<any>;
+  control: Control<T>;
   required?: boolean;
   options?: Option[];
   label : string;
@@ -20,14 +24,14 @@ interface DropdownProps {
  
 }
  
-const Dropdown: React.FC<DropdownProps> = ({
+const Dropdown = <T extends FieldValues>({
   name,
   label,
   control,
   required = false,
   disabled = false, 
   options = [],
-}) => {
+}: DropdownProps<T>) => {
  
 const {t} = useTranslation();
 const SelectText= getPagesDataText(t);
@@ -37,7 +41,7 @@ const This_field_is_required_Text= getPagesDataText(t);
    <div className="w-full mx-auto mb-2">
   <Label label={label} required={required} />
   <Controller
-    name={name}
+    name={name as FieldPath<T>}
     control={control}
     rules={required ? { required: This_field_is_required_Text.This_field_is_required } : {}}
     render={({ field, fieldState: { error } }) => (

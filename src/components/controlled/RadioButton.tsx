@@ -1,5 +1,9 @@
-import React from "react";
-import { Controller, type Control } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import Error from "./Error";
 import Label from "../Label";
 
@@ -8,26 +12,26 @@ interface Option {
   value: string;
 }
 
-interface RadioButtonProps {
+interface RadioButtonProps<T extends FieldValues> {
   name: string;
-  control: Control<any>;
+  control: Control<T>;
   options: Option[];
   required?: boolean;
   label: string;
 }
 
-const RadioButton: React.FC<RadioButtonProps> = ({
+const RadioButton = <T extends FieldValues>({
   name,
   label,
   control,
   options = [],
   required = false,
-}) => {
+}: RadioButtonProps<T>) => {
   return (
     <>
     <Label label={label} required={required}/>
     <Controller
-      name={name}
+      name={name as FieldPath<T>}
       control={control}
       rules={required ? { required: `Choose any one option` } : {}}
       render={({ field, fieldState: { error } }) => (

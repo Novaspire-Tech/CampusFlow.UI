@@ -47,7 +47,11 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest: any = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest._skipAuthRedirect
+    ) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refreshToken");
 

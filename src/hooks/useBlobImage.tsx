@@ -47,7 +47,11 @@ export const openDocument = async (documentPath: string) => {
 
   const response = await AxiosFunc.GetFile(`/${documentPath}`);
 
-  const contentType = response.headers["content-type"] || "application/pdf";
+  const responseContentType = response.headers["content-type"];
+  const contentType =
+    typeof responseContentType === "string"
+      ? responseContentType
+      : "application/pdf";
 
   const blob = new Blob([response.data], { type: contentType });
   const url = URL.createObjectURL(blob);
