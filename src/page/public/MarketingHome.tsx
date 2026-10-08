@@ -141,20 +141,21 @@ const BestSellingPlanCard: React.FC<{ plan: Package; index: number }> = ({ plan,
 
 const MarketingHome: React.FC = () => {
   const [showAllPlans, setShowAllPlans] = useState(false)
+  const backendConfigured = Boolean(import.meta.env.VITE_API_BASE_URL)
   const {
     data: bestSellingPlans = [],
     isLoading: plansLoading,
     isError: plansError,
     error: plansQueryError,
     refetch: refetchPlans,
-  } = useBestSellingPackages()
+  } = useBestSellingPackages(backendConfigured)
   const {
     data: allPackagesData,
     isLoading: allPackagesLoading,
     isError: allPackagesError,
     error: allPackagesQueryError,
     refetch: refetchAllPackages,
-  } = useAllPackages(showAllPlans)
+  } = useAllPackages(showAllPlans && backendConfigured)
   const displayedPlans = showAllPlans
     ? allPackagesData?.packages ?? bestSellingPlans
     : bestSellingPlans
@@ -349,7 +350,11 @@ const MarketingHome: React.FC = () => {
             </p>
           </div>
 
-          {plansLoading ? (
+          {!backendConfigured ? (
+            <p className="mx-auto mt-10 max-w-xl rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600">
+              Plan information will be available when the backend is connected.
+            </p>
+          ) : plansLoading ? (
             <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {[0, 1, 2].map((item) => (
                 <div

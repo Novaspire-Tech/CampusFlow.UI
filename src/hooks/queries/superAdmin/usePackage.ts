@@ -58,10 +58,11 @@ export const useAllPackages = (enabled = true) =>
     gcTime: 10 * 60 * 1000,
   })
 
-export const useBestSellingPackages = () =>
+export const useBestSellingPackages = (enabled = true) =>
   useQuery({
     queryKey: [...packageKeys.all, 'best-selling'],
     queryFn: () => packageService.getBestSelling(),
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })
