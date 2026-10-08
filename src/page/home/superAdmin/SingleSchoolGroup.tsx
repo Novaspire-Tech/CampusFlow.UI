@@ -10,6 +10,7 @@ import { useUpdateSchool } from '../../../hooks/queries/superAdmin/useSchool'
 import { usePackages } from '../../../hooks/queries/superAdmin/usePackage'
 import { type SchoolInGroup } from '../../../services/superAdmin/schoolGroupService'
 import { TextField } from '../../../components/controlled'
+import DateField from '../../../components/controlled/DateField'
 import Dropdown from '../../../components/controlled/Dropdown'
 import EmailField from '../../../components/controlled/EmailField'
 import MobileField from '../../../components/controlled/MobileField'
@@ -430,8 +431,9 @@ const SchoolDetailDrawer = ({
       webSite: school.webSite ?? '',
       managedBy: school.managedBy ?? '',
       session: school.session ?? '',
+      startDate: school.startDate ?? '',
+      endDate: school.endDate ?? '',
       type: school.type ?? '',
-      databaseName: school.databaseName ?? '',
       logo: null,
     },
   })
@@ -449,8 +451,9 @@ const SchoolDetailDrawer = ({
           webSite: formData.webSite.trim(),
           managedBy: formData.managedBy.trim(),
           session: formData.session.trim(),
+          startDate: formData.startDate,
+          endDate: formData.endDate || null,
           type: formData.type.toUpperCase(),
-          databaseName: formData.databaseName.trim().toLowerCase(),
         },
       })
       alert('School updated successfully!')
@@ -470,8 +473,9 @@ const SchoolDetailDrawer = ({
       webSite: school.webSite ?? '',
       managedBy: school.managedBy ?? '',
       session: school.session ?? '',
+      startDate: school.startDate ?? '',
+      endDate: school.endDate ?? '',
       type: school.type ?? '',
-      databaseName: school.databaseName ?? '',
       logo: null,
     })
     setIsEditing(false)
@@ -594,19 +598,24 @@ const SchoolDetailDrawer = ({
                     control={control}
                     required
                   />
+                  <DateField
+                    name="startDate"
+                    label="Start Date"
+                    control={control}
+                    required
+                  />
+                  <DateField
+                    name="endDate"
+                    label="End Date"
+                    control={control}
+                    defaultToday={false}
+                  />
                   <Dropdown
                     name="type"
                     label="School / College Type"
                     control={control}
                     required
                     options={TYPE_OPTIONS}
-                  />
-                  <TextField
-                    name="databaseName"
-                    label="Database Name"
-                    placeholder="e.g. sunrise_school_db"
-                    control={control}
-                    required
                   />
                 </div>
               </div>

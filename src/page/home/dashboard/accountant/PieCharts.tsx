@@ -95,7 +95,7 @@ const PieCharts: React.FC = () => {
         const monthName = getCurrentMonthName()
         setCurrentMonth(monthName)
 
-        const transactionsResponse = await feeTransactionService.getAll(0, 10000, 'desc')
+        const transactionsResponse = await feeTransactionService.getAllPages('desc')
         const transactions = transactionsResponse.feeTransactions || []
 
         const feeIncomeMap = new Map<string, number>()

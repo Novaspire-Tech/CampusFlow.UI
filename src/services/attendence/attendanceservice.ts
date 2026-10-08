@@ -138,7 +138,7 @@ export interface SchoolDashboardData {
 export const attendanceService = {
   getAll: async (
     page = 0,
-    size = 10000,
+    size = 10,
     sortDirection = 'asc',
   ): Promise<{
     attendance: StudentAttendanceDto[]

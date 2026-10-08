@@ -273,7 +273,7 @@ const FeeReceipt: React.FC = () => {
     if (txLoaded) return
       ; (async () => {
         try {
-          const res = await feeTransactionService.getAll(0, 100000, 'desc')
+          const res = await feeTransactionService.getAllPages('desc')
           const map = new Map<string, Map<string, any>>()
             ; (res.feeTransactions || []).forEach((tx) => {
               const sid = String(tx.studentId)
@@ -305,7 +305,7 @@ const FeeReceipt: React.FC = () => {
       ; (async () => {
         setIsLoadingBase(true)
         try {
-          const res = await studentFilterService.getAll(0, 100000, 'asc')
+          const res = await studentFilterService.getAllPages('asc')
           const transformed = res.students
             .map((s: any) => buildStudentRecord(s, txMap))
             .filter((s): s is StudentDueFeesData => s !== null)
@@ -351,7 +351,7 @@ const FeeReceipt: React.FC = () => {
         const shouldCallBackend = !!filterDto.search || !!filterDto.schoolClassId || !!filterDto.sectionId || !!filterDto.rollNo
         let baseStudents: StudentDueFeesData[]
         if (shouldCallBackend) {
-          const res = await studentFilterService.filter({ dto: filterDto, page: 0, size: 100000, sortDirection: 'asc' })
+          const res = await studentFilterService.filterAllPages(filterDto, 'asc')
           baseStudents = res.students
             .map((s: any) => buildStudentRecord(s, txMap))
             .filter((s): s is StudentDueFeesData => s !== null)
@@ -636,7 +636,15 @@ const FeeReceipt: React.FC = () => {
 
                     <div className="mt-2 overflow-x-auto -mx-3 sm:mx-0">
                       <div className="min-w-120 px-3 sm:px-0 sm:min-w-0">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="w-full min-w-[720px] table-fixed divide-y divide-gray-200">
+                          <colgroup>
+                            <col className="w-[16%]" />
+                            <col className="w-[20%]" />
+                            <col className="w-[16%]" />
+                            <col className="w-[16%]" />
+                            <col className="w-[16%]" />
+                            <col className="w-[16%]" />
+                          </colgroup>
                           <thead className="bg-gray-50">
                             <tr>
                               {[
@@ -647,7 +655,7 @@ const FeeReceipt: React.FC = () => {
                                 { label: Text.Paid || 'Paid', align: 'text-right' },
                                 { label: Text.Pending || 'Pending', align: 'text-right' }
                               ].map((h) => (
-                                <th key={h.label} className={`px-2 sm:px-3 py-2 text-xs font-medium text-gray-500 uppercase ${h.align}`}>
+                                <th key={h.label} className={`px-2 sm:px-3 py-2 text-xs font-medium text-gray-500 uppercase whitespace-nowrap ${h.align}`}>
                                   {h.label}
                                 </th>
                               ))}
@@ -675,10 +683,10 @@ const FeeReceipt: React.FC = () => {
                                   )
                                 })}
                                 <tr className="bg-gray-100 font-bold">
-                                  <td colSpan={3} className="px-2 sm:px-3 py-2 text-sm text-right text-gray-900">{Text.Grand_Total || 'Grand Total'}</td>
-                                  <td className="px-2 sm:px-3 py-2 text-sm text-right text-gray-900">{student.totalFees.toFixed(2)}</td>
-                                  <td className="px-2 sm:px-3 py-2 text-sm text-right text-green-600">{student.paidFees.toFixed(2)}</td>
-                                  <td className={`px-2 sm:px-3 py-2 text-sm text-right ${student.pending > 0 ? 'text-red-500' : 'text-green-600'}`}>{student.pending.toFixed(2)}</td>
+                                  <td colSpan={3} className="px-2 sm:px-3 py-2 text-sm text-right text-gray-900 whitespace-nowrap">{Text.Grand_Total || 'Grand Total'}</td>
+                                  <td className="px-2 sm:px-3 py-2 text-sm text-right text-gray-900 whitespace-nowrap">{student.totalFees.toFixed(2)}</td>
+                                  <td className="px-2 sm:px-3 py-2 text-sm text-right text-green-600 whitespace-nowrap">{student.paidFees.toFixed(2)}</td>
+                                  <td className={`px-2 sm:px-3 py-2 text-sm text-right whitespace-nowrap ${student.pending > 0 ? 'text-red-500' : 'text-green-600'}`}>{student.pending.toFixed(2)}</td>
                                 </tr>
                               </>
                             ) : (

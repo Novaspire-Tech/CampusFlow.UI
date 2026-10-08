@@ -12,7 +12,7 @@ import PackagePerformance from '../../../home/dashboard/superAdmin/Packageperfor
 import SuperAdminPieCharts from '../../../home/dashboard/superAdmin/Superadminpiecharts'
 import { usePackages } from '../../../../hooks/queries/superAdmin/usePackage'
 import { useSchoolGroups } from '../../../../hooks/queries/superAdmin/useschoolGroup'
-import { useSubscriptions } from '../../../../hooks/queries/superAdmin/useSubscription'
+import { useAllSubscriptions } from '../../../../hooks/queries/superAdmin/useSubscription'
 
 const fmt = (iso?: string | null): string => {
   if (!iso) return '—'
@@ -137,8 +137,8 @@ const RecentSubscriptions: React.FC<{ rows: RecentSub[]; loading: boolean }> = (
 
 const SuperAdminDashboard: React.FC = () => {
   const { data: packagesData, isLoading: pkgLoading } = usePackages()
-  const { data: groupsData, isLoading: grpLoading } = useSchoolGroups({ page: 0, size: 10000 })
-  const { data: subData, isLoading: subLoading } = useSubscriptions({ page: 0, size: 10000 })
+  const { data: groupsData, isLoading: grpLoading } = useSchoolGroups({ page: 0, size: 10 })
+  const { data: subData, isLoading: subLoading } = useAllSubscriptions()
 
   const subscriptions = subData?.subscriptions ?? []
 

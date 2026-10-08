@@ -89,30 +89,39 @@ export const addItemsService = {
       const body: Record<string, any> = {};
       if (params.search?.trim()) body.search = params.search.trim();
 
-      const response = await AxiosFunc.Post(
-        ADD_ITEMS_ENDPOINTS.FILTER,
-        body,
-        {
-          params: {
-            page: 0,
-            size: 10000,
-            sortDirection: 'asc',
-          },
-        }
-      );
+      const pageSize = 10;
+      const items: AddItems[] = [];
+      let page = 0;
+      let totalPages = 1;
 
-      if (response.data?.status !== 200)
-        throw new Error(response.data.message);
+      do {
+        const response = await AxiosFunc.Post(ADD_ITEMS_ENDPOINTS.FILTER, body, {
+          params: { page, size: pageSize, sortDirection: 'asc' },
+        });
 
-      const raw = response.data?.data;
+        if (response.data?.status !== 200)
+          throw new Error(response.data.message);
 
-      if (Array.isArray(raw)) return raw.map(transformBackendToFrontend);
-      if (raw?.content) return raw.content.map(transformBackendToFrontend);
-      if (raw?.source) return raw.source.map(transformBackendToFrontend);
-      if (raw?.items) return raw.items.map(transformBackendToFrontend);
-      if (raw?.addItems) return raw.addItems.map(transformBackendToFrontend);
+        const raw = response.data?.data;
+        let pageItems: unknown[] = [];
+        if (Array.isArray(raw)) pageItems = raw;
+        else if (Array.isArray(raw?.content)) pageItems = raw.content;
+        else if (Array.isArray(raw?.source)) pageItems = raw.source;
+        else if (Array.isArray(raw?.items)) pageItems = raw.items;
+        else if (Array.isArray(raw?.addItems)) pageItems = raw.addItems;
 
-      return [];
+        items.push(...pageItems.map(transformBackendToFrontend));
+        const reportedPages = Number(raw?.totalPages);
+        totalPages =
+          Number.isInteger(reportedPages) && reportedPages > page
+            ? reportedPages
+            : pageItems.length === pageSize
+              ? page + 2
+              : page + 1;
+        page += 1;
+      } while (page < totalPages);
+
+      return items;
     } catch (error: any) {
       console.error('filter error:', error);
       throw new Error(error.response?.data?.message || error.message);

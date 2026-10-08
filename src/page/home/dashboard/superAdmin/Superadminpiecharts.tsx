@@ -1,6 +1,6 @@
 import React from "react";
 import Chart from "react-apexcharts";
-import { useSubscriptions } from "../../../../hooks/queries/superAdmin/useSubscription";
+import { useAllSubscriptions } from "../../../../hooks/queries/superAdmin/useSubscription";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const SUBSCRIPTION_COLORS = ["#10B981", "#F59E0B", "#EF4444"];
@@ -99,7 +99,7 @@ const SuperAdminPieCharts: React.FC = () => {
     data:      paginatedData,
     isLoading: subscriptionsLoading,
     isError:   subscriptionsError,
-  } = useSubscriptions({ page: 0, size: 10000 });
+  } = useAllSubscriptions();
 
   // ── Subscription counts ───────────────────────────────────────────────────
   const subscriptions: any[] = paginatedData?.subscriptions ?? [];

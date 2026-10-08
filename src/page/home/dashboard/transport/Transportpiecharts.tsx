@@ -3,7 +3,7 @@ import Chart from "react-apexcharts";
 import { useTranslation } from "react-i18next";
 import { useRoutes } from "../../../../hooks/queries/transport/useRoutes";
 import { useVehicles } from "../../../../hooks/queries/transport/useVehicles";
-import { useRoutePickupPoints } from "../../../../hooks/queries/transport/useRoutePickupPoints";
+import { useAllRoutePickupPoints } from "../../../../hooks/queries/transport/useRoutePickupPoints";
 import { useAssignVehicles } from "../../../../hooks/queries/transport/useAssignVehicles";
 import { getPagesDataText } from "../../../../helpers/useTranslations";
 
@@ -36,7 +36,7 @@ const TransportPieCharts: React.FC = () => {
   const { data: routes = [], isLoading: routesLoading } = useRoutes();
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehicles();
   const { data: routePickupPointsData, isLoading: routePickupLoading } =
-    useRoutePickupPoints(0, 10000);
+    useAllRoutePickupPoints();
   const { data: assignedVehicles = [], isLoading: assignedVehiclesLoading } =
     useAssignVehicles();
 

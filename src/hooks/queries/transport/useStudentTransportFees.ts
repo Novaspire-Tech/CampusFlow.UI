@@ -43,6 +43,17 @@ export const useStudentTransportFees = (
   })
 }
 
+export const useAllStudentTransportFees = (
+  sortBy?: string,
+  sortDirection: 'asc' | 'desc' = 'asc',
+) =>
+  useQuery({
+    queryKey: [...studentTransportFeesKeys.all, 'all-pages', sortBy, sortDirection],
+    queryFn: () => studentTransportFeesService.getAllPages(sortBy, sortDirection),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+
 export const useFilteredStudentTransportFees = (
   criteria: StudentTransportFeesFilterCriteria,
   page = 0,

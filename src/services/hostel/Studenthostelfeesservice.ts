@@ -158,6 +158,17 @@ export const studentHostelFeesService = {
     return extractAllocations(response) // ← pass response
   },
 
+  getAllPages: async (): Promise<StudentHostelFeePage> => {
+    const pageSize = 10
+    const firstPage = await studentHostelFeesService.getAll(0, pageSize)
+    const content = [...firstPage.content]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentHostelFeesService.getAll(page, pageSize)
+      content.push(...response.content)
+    }
+    return { ...firstPage, content, currentPage: 0 }
+  },
+
   getById: async (id: number): Promise<any> => {
     const response = await AxiosFunc.Get(buildUrl(STUDENT_HOSTEL_FEE_ENDPOINTS.GET_BY_ID(id)), {})
     assertOk(response, 'Failed to fetch hostel fee')
@@ -178,6 +189,17 @@ export const studentHostelFeesService = {
     const response = await AxiosFunc.Post(`${baseUrl}?${qs}`, dto)
     assertOk(response, 'Failed to filter hostel fees')
     return extractAllocations(response) // ← pass response (not response.data)
+  },
+
+  filterAllPages: async (dto: FilterStudentHostelFee): Promise<StudentHostelFeePage> => {
+    const pageSize = 10
+    const firstPage = await studentHostelFeesService.filter(dto, 0, pageSize)
+    const content = [...firstPage.content]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentHostelFeesService.filter(dto, page, pageSize)
+      content.push(...response.content)
+    }
+    return { ...firstPage, content, currentPage: 0 }
   },
 
   delete: async (id: number): Promise<void> => {

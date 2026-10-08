@@ -210,6 +210,18 @@ export type ReportDownloadResult =
   | { downloaded: false; message: string }
 
 export const feeTransactionService = {
+  getAllPages: async (
+    sortDirection: 'asc' | 'desc' = 'asc',
+  ): Promise<FeeTransactionsPaginatedResponse> => {
+    const pageSize = 10
+    const firstPage = await feeTransactionService.getAll(0, pageSize, sortDirection)
+    const feeTransactions = [...firstPage.feeTransactions]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await feeTransactionService.getAll(page, pageSize, sortDirection)
+      feeTransactions.push(...response.feeTransactions)
+    }
+    return { ...firstPage, feeTransactions, currentPage: 0 }
+  },
 
   getAll: async (
     page = 0,
@@ -272,27 +284,12 @@ export const feeTransactionService = {
 
   getById: async (id: string): Promise<FeeTransactionDto> => {
     try {
-      const endpoint = isAllSchools()
-        ? FEE_TRANSACTION_ENDPOINTS.GET_ALL_SCHOOL
-        : FEE_TRANSACTION_ENDPOINTS.GET_ALL
-
-      const response = await AxiosFunc.Get(endpoint, {
-        page: 0,
-        size: 100000,
-        sortDirection: 'asc',
-      })
+      const response = await AxiosFunc.Get(FEE_TRANSACTION_ENDPOINTS.GET_BY_ID(id))
 
       if (response.data?.status !== 200)
-        throw new Error(response.data?.message || 'Failed to fetch fee transactions')
-
-      const all = response.data?.data?.feeTransactions || []
-      const found = all.find(
-        (tx: any) => String(tx.feeTransactionId) === String(id),
-      )
-
-      if (!found) throw new Error('Fee transaction not found')
-
-      return transformResponse(found)
+        throw new Error(response.data?.message || 'Failed to fetch fee transaction')
+      if (!response.data?.data) throw new Error('Fee transaction not found')
+      return transformResponse(response.data.data)
     } catch (error: any) {
       console.error('Error fetching fee transaction:', error)
       throw error

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ControlledTable from '../../../components/uncontrolled/ControlledTable'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import TextField from '../../../components/controlled/TextField'
+import DateField from '../../../components/controlled/DateField'
 import Button from '../../../components/controlled/Button'
 import { IconField } from '../../../components'
 import { getPagesDataText } from '../../../helpers/useTranslations'
@@ -16,9 +17,12 @@ import {
 } from '../../../hooks/queries/systemSettinds/useSessionSetting'
 import { confirmToast } from '../../../helpers/confirmToast'
 import AllSchoolDropdown from '../../../components/uncontrolled/AllSchoolDropdown'
+import SessionRolloverDialog from '../../../components/systemSettings/SessionRolloverDialog'
 
 type FormValues = {
   Session: string
+  startDate: string
+  endDate: string
 }
 
 function SessionSetting() {
@@ -29,9 +33,13 @@ function SessionSetting() {
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
+  const [rolloverOpen, setRolloverOpen] = useState(false)
+  const [rolloverSchoolReady, setRolloverSchoolReady] = useState(
+    () => localStorage.getItem('isAllSchools') !== 'true' && Boolean(localStorage.getItem('schoolCode')),
+  )
 
   const { handleSubmit, control, reset, setValue } = useForm<FormValues>({
-    defaultValues: { Session: '' },
+    defaultValues: { Session: '', startDate: '', endDate: '' },
   })
 
   const { data: sessions = [] } = useSessions()
@@ -40,6 +48,16 @@ function SessionSetting() {
   const deleteSession = useDeleteSession()
   const deleteMultipleSessions = useDeleteMultipleSessions()
   const changeCurrentSession = useChangeCurrentSession()
+
+  useEffect(() => {
+    const updateSchoolSelection = () => {
+      setRolloverSchoolReady(
+        localStorage.getItem('isAllSchools') !== 'true' && Boolean(localStorage.getItem('schoolCode')),
+      )
+    }
+    window.addEventListener('schoolCodeChanged', updateSchoolSelection)
+    return () => window.removeEventListener('schoolCodeChanged', updateSchoolSelection)
+  }, [])
 
   const currentSession = sessions.find((s) => s.isCurrent)
 
@@ -50,6 +68,8 @@ function SessionSetting() {
     if (item) {
       setEditId(item.sessionId.toString())
       setValue('Session', item.session)
+      setValue('startDate', item.startDate)
+      setValue('endDate', item.endDate ?? '')
     }
   }
 
@@ -120,11 +140,9 @@ function SessionSetting() {
         {
           id: editId,
           data: {
-            sessionId: editId,
             session: data.Session,
-            isCurrent: false,
-            sessionName: '',
-            id: '',
+            startDate: data.startDate,
+            endDate: data.endDate || null,
           },
         },
         {
@@ -144,9 +162,8 @@ function SessionSetting() {
       addSession.mutate(
         {
           session: data.Session,
-          isCurrent: false,
-          sessionName: '',
-          id: '',
+          startDate: data.startDate,
+          endDate: data.endDate || null,
         },
         {
           onSuccess: () => {
@@ -168,16 +185,50 @@ function SessionSetting() {
     .map((item) => ({
       id: item.sessionId,
       Session: item.session,
+      startDate: item.startDate,
+      endDate: item.endDate ?? '',
       isCurrent: item.isCurrent,
     }))
 
   const columns = [
     { key: 'Session', label: texts.Session || 'Session' },
+    { key: 'startDate', label: texts.Start_Date || 'Start Date' },
+    { key: 'endDate', label: texts.End_Date || 'End Date' },
     { key: 'isCurrent', label: texts.Is_Current },
   ]
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-6 md:p-8">
+      <div className="mb-6 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setRolloverOpen(true)}
+          disabled={!rolloverSchoolReady}
+          className="rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          {t('pages_data.System_Settings.Session_Setting.Rollover.entryButton', {
+            defaultValue: 'Copy structure to another session',
+          })}
+        </button>
+      </div>
+      {!rolloverSchoolReady && (
+        <p className="mb-6 text-right text-sm text-amber-800">
+          {t('pages_data.System_Settings.Session_Setting.Rollover.selectSchoolFirst', {
+            defaultValue: 'Select a school before starting a session rollover.',
+          })}
+        </p>
+      )}
+      {rolloverOpen && (
+        <SessionRolloverDialog
+          open={rolloverOpen}
+          sessions={sessions}
+          onClose={() => setRolloverOpen(false)}
+          onComplete={(report) => {
+            setSuccessMessage(report.message || 'Session structure copied successfully.')
+            setErrorMessage('')
+          }}
+        />
+      )}
       {currentSession && (
         <div className="flex items-center gap-3 bg-amber-50 border border-amber-300 text-amber-800 rounded-md px-4 py-3 mb-6 text-sm">
           <IconField name="FaExclamationTriangle" size={16} />
@@ -194,8 +245,8 @@ function SessionSetting() {
             <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-4">
               <span className="text-sm text-blue-700">
                 {editingSession?.isCurrent
-                  ? `"${editingSession.session}" {texts.is_already_the_active_session}`
-                  : `{text.set} "${editingSession?.session ?? ''}" {texts.as_active_session}`}
+                  ? ''
+                  : `Set "${editingSession?.session ?? ''}" as the active session`}
               </span>
               <button
                 type="button"
@@ -232,6 +283,18 @@ function SessionSetting() {
               control={control}
               required
               placeholder="e.g., 2023-2024"
+            />
+            <DateField
+              name="startDate"
+              label={texts.Start_Date || 'Start Date'}
+              control={control}
+              required
+            />
+            <DateField
+              name="endDate"
+              label={texts.End_Date || 'End Date'}
+              control={control}
+              defaultToday={false}
             />
             <div className="flex justify-end gap-2">
               {editId && (

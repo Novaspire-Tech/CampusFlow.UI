@@ -66,8 +66,7 @@ const StatsCards: React.FC = () => {
       if (response && response.totalItems !== undefined) {
         setStats((prev) => ({ ...prev, totalStudents: response.totalItems }))
       } else {
-        const allStudents = await studentService.getAll(0, 10000)
-        setStats((prev) => ({ ...prev, totalStudents: allStudents.students.length }))
+        throw new Error('Student count was not included in the server response')
       }
     } catch (error: any) {
       console.error('Error fetching students count:', error)

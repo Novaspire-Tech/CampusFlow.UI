@@ -44,7 +44,7 @@ export const useStudentFeeSearch = () => {
     setIsSearching(true)
     setHasSearched(true)
     try {
-      const result = await addStudentFeeService.searchStudents(params)
+      const result = await addStudentFeeService.searchAllStudents(params)
       if (result.length === 0) toast.info('No students found for the selected filters.')
       setStudents(result)
       return result

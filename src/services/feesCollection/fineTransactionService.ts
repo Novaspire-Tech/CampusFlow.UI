@@ -165,6 +165,40 @@ export const fineTransactionService = {
 
 export const studentFilterService = {
 
+  getAllPages: async (sortDirection = 'asc'): Promise<StudentListResponse> => {
+    const pageSize = 10
+    const firstPage = await studentFilterService.getAll(0, pageSize, sortDirection)
+    const students = [...firstPage.students]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentFilterService.getAll(page, pageSize, sortDirection)
+      students.push(...response.students)
+    }
+    return { ...firstPage, students, currentPage: 0 }
+  },
+
+  filterAllPages: async (
+    dto: FilterStudentParams['dto'],
+    sortDirection = 'asc',
+  ): Promise<StudentListResponse> => {
+    const pageSize = 10
+    const firstPage = await studentFilterService.filter({
+      dto,
+      page: 0,
+      size: pageSize,
+      sortDirection,
+    })
+    const students = [...firstPage.students]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentFilterService.filter({
+        dto,
+        page,
+        size: pageSize,
+        sortDirection,
+      })
+      students.push(...response.students)
+    }
+    return { ...firstPage, students, currentPage: 0 }
+  },
 
   getAll: async (page = 0, size = 10, sortDirection = 'asc'): Promise<StudentListResponse> => {
     const url = isAllSchools()

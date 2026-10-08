@@ -6,6 +6,8 @@ export interface School {
   phoneNumber: string;
   address: string;
   session: string;
+  startDate?: string;
+  endDate?: string | null;
   type: string;
   logo: string | null;
   tenantId: string;
@@ -29,8 +31,9 @@ export interface AddSchoolToGroupRequest {
   email: string;
   phoneNumber: string;
   session: string;
+  startDate: string;
+  endDate: string | null;
   type: string;
-  databaseName: string;
   logo?: File | null;
   managedBy: string;
   webSite: string;
@@ -42,8 +45,9 @@ export interface AddSchoolToGroupForm {
   email: string;
   phoneNumber: string;
   session: string;
+  startDate: string;
+  endDate: string;
   type: string;
-  databaseName: string;
   logo?: File | null;
   managedBy: string;
   webSite: string;
@@ -75,7 +79,8 @@ export interface UpdateSchoolRequestDto {
   phoneNumber: string;
   session: string;
   type: string;
-  databaseName: string;
+  startDate?: string;
+  endDate?: string | null;
   managedBy: string;
   webSite: string;
 }

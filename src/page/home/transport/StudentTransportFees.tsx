@@ -400,7 +400,7 @@ const AddStudentTransportFees: React.FC = () => {
       if (data.sectionId) params.sectionId = Number(data.sectionId)
       if (data.search?.trim()) params.searchQuery = data.search.trim()
 
-      const result = await studentService.search(params, 0, 100000, 'admissionNo', 'asc')
+      const result = await studentService.searchAllPages(params, 'admissionNo', 'asc')
       let students = (result.students || [])
         .map(mapRawToStudentTransportFeeRecord)
         .filter((s): s is StudentTransportFeeRecord => s !== null)
@@ -410,10 +410,8 @@ const AddStudentTransportFees: React.FC = () => {
         if (data.classId) filterCriteria.classId = Number(data.classId)
         if (data.routeId) filterCriteria.routeId = Number(data.routeId)
         if (data.search?.trim()) filterCriteria.search = data.search.trim()
-        const transportResult = await studentTransportFeesService.filter(
+        const transportResult = await studentTransportFeesService.filterAllPages(
           filterCriteria,
-          0,
-          100000,
           'studentTransportFeesId',
           'asc',
         )

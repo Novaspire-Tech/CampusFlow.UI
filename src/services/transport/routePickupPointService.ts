@@ -100,6 +100,17 @@ export const routePickupPointService = {
     return extractPaginated(response)
   },
 
+  getAllPages: async (sortDirection: 'asc' | 'desc' = 'asc'): Promise<PaginatedRoutePickupPointsResponse> => {
+    const pageSize = 10
+    const firstPage = await routePickupPointService.getAll(0, pageSize, sortDirection)
+    const routePickupPoints = [...firstPage.routePickupPoints]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await routePickupPointService.getAll(page, pageSize, sortDirection)
+      routePickupPoints.push(...response.routePickupPoints)
+    }
+    return { ...firstPage, routePickupPoints, currentPage: 0 }
+  },
+
   filter: async (
     dto: FilterRoutePickupPointDto,
     page = 0,

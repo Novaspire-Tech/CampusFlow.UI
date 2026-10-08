@@ -41,6 +41,8 @@ export interface SchoolInGroup {
   phoneNumber: string
   email: string
   session: string
+  startDate: string
+  endDate: string | null
   sessionStartMonth: string
   startDateOfWeek: string
   logo: string | null
@@ -115,6 +117,8 @@ const toSchoolInGroup = (item: any): SchoolInGroup => ({
   phoneNumber: String(item.phoneNumber ?? ''),
   email: String(item.email ?? ''),
   session: String(item.session ?? ''),
+  startDate: String(item.startDate ?? ''),
+  endDate: item.endDate ?? null,
   sessionStartMonth: String(item.sessionStartMonth ?? ''),
   startDateOfWeek: String(item.startDateOfWeek ?? ''),
   logo: item.logo ?? null,

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { getPagesDataText } from "../../../helpers/useTranslations";
 import { useSchoolClasses } from "../../../hooks/queries/academics/useClasses";
 import { useSections } from "../../../hooks/queries/academics/useSections";
-import { useStudents } from "../../../hooks/queries/studentInformation/useStudents";
+import { useAllStudents } from "../../../hooks/queries/studentInformation/useStudents";
 import { studentService } from "../../../services/studentInformation/studentService";
 import {
   useCreateAddStudentMember,
@@ -79,7 +79,7 @@ const AddStudent = () => {
   const [showForm, setShowForm] = useState(false);
   const [tableKey, setTableKey] = useState(0);
 
-  const { data: studentsData, isLoading } = useStudents(0, 100000, "asc");
+  const { data: studentsData, isLoading } = useAllStudents("asc");
   const { data: classesData } = useSchoolClasses();
   const {
     data: libraryMembers,
@@ -197,7 +197,7 @@ const AddStudent = () => {
       if (classId) params.schoolClassId = Number(classId);
       if (sectionId) params.sectionId = Number(sectionId);
 
-      const result = await studentService.search(params, 0, 100000, "admissionNo", "asc");
+      const result = await studentService.searchAllPages(params, "admissionNo", "asc");
 
       if (result.students && result.students.length > 0) {
         const libraryCardMap = buildLibraryCardMap();

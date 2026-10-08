@@ -11,7 +11,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getPagesDataText } from '../../../helpers/useTranslations'
 import {
-  useStudents,
+  useAllStudents,
   useDeleteStudents,
   useBulkUploadStudentSessions,
   useDownloadStudentSessionTemplate,
@@ -772,7 +772,7 @@ export default function DisabledStudents(): React.JSX.Element {
     data: studentsData,
     isLoading: studentsLoading,
     refetch: refetchStudents,
-  } = useStudents(0, 100000, 'asc')
+  } = useAllStudents('asc')
   const deleteStudents = useDeleteStudents()
   const bulkUploadSessionMutation = useBulkUploadStudentSessions()
   const downloadSessionTemplateMutation = useDownloadStudentSessionTemplate()
@@ -997,7 +997,7 @@ export default function DisabledStudents(): React.JSX.Element {
         if (classId) params.schoolClassId = Number(classId)
         if (sectionId) params.sectionId = Number(sectionId)
         if (keyword?.trim()) params.searchQuery = keyword.trim()
-        const result = await studentService.search(params, 0, 100000, 'admissionNo', 'asc')
+        const result = await studentService.searchAllPages(params, 'admissionNo', 'asc')
         const transformed = (result.students || [])
           .map((student: any) => transformApiDisabledStudent(student, categoryMap))
           .filter((s: DisabledStudent | null): s is DisabledStudent => s !== null)

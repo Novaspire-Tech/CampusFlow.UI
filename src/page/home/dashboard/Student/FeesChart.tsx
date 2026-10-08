@@ -301,7 +301,7 @@ const FeesChart: React.FC<FeesChartProps> = ({ onMonthlyDataUpdate, allSchoolsDa
         }
 
         const [feeTransactions, expensesResponse] = await Promise.all([
-          feeTransactionService.getAll(0, 10000, 'asc'),
+          feeTransactionService.getAllPages('asc'),
           financeApi.getExpenses(),
         ])
 

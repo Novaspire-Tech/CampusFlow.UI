@@ -155,7 +155,19 @@ export const bookIssueReturnService = {
   getAll: async (page = 0, size = 10, sortDirection: 'asc' | 'desc' = 'desc'): Promise<BookIssueReturnListResponse> => {
     const url = isAllSchools() ? buildUrl(EP.GET_ALL_Schools) : buildUrl(EP.GET_ALL)
     const res = await AxiosFunc.Get(url, { page, size, sortDirection })
+    if (res.data?.status !== 200) throw new Error(res.data?.message || 'Failed to fetch book issue records')
     return normalisePaginated(res?.data?.data, page, size)
+  },
+
+  getAllPages: async (sortDirection: 'asc' | 'desc' = 'desc'): Promise<BookIssueReturnListResponse> => {
+    const pageSize = 10
+    const firstPage = await bookIssueReturnService.getAll(0, pageSize, sortDirection)
+    const bookIssueReturns = [...firstPage.bookIssueReturns]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await bookIssueReturnService.getAll(page, pageSize, sortDirection)
+      bookIssueReturns.push(...response.bookIssueReturns)
+    }
+    return { ...firstPage, bookIssueReturns, currentPage: 0 }
   },
 
   filter: async (search = '', page = 0, size = 10, sortBy = 'issueDate', sortDirection: 'asc' | 'desc' = 'desc'): Promise<BookIssueReturnListResponse> => {

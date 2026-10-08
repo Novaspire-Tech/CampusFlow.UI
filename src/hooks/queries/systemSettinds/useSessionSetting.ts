@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionService } from '../../../services/systemSettinds/SessionSettingServices'
-import type { Session } from '../../../types/systemSettinds/SessionSetting'
+import type {
+  SessionRolloverRequest,
+  SessionRequest,
+} from '../../../types/systemSettinds/SessionSetting'
 
 export const sessionKeys = {
   all: ['sessions'] as const,
@@ -30,7 +33,7 @@ export const useAddSession = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: Omit<Session, 'sessionId'>) => sessionService.create(data),
+    mutationFn: (data: SessionRequest) => sessionService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.all })
       queryClient.invalidateQueries({ queryKey: sessionKeys.stats })
@@ -42,7 +45,8 @@ export const useUpdateSession = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Session }) => sessionService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: SessionRequest }) =>
+      sessionService.update(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.all })
       queryClient.invalidateQueries({
@@ -58,6 +62,18 @@ export const useChangeCurrentSession = () => {
 
   return useMutation({
     mutationFn: (id: string) => sessionService.changeCurrentSession(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionKeys.all })
+      queryClient.invalidateQueries({ queryKey: sessionKeys.stats })
+    },
+  })
+}
+
+export const useRolloverSession = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (request: SessionRolloverRequest) => sessionService.rollover(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionKeys.all })
       queryClient.invalidateQueries({ queryKey: sessionKeys.stats })

@@ -10,6 +10,7 @@ export const studentKeys = {
   all: ['students'] as const,
   paginated: (page: number, size: number, sort: string) =>
     ['students', 'paginated', page, size, sort] as const,
+  allPages: (sort: string) => ['students', 'all-pages', sort] as const,
   search: (
     params: StudentSearchParams,
     page: number,
@@ -28,7 +29,7 @@ export const studentKeys = {
 }
 
 // GET /student/all
-export const useStudents = (page = 0, size = 100, sortDirection = 'asc') => {
+export const useStudents = (page = 0, size = 10, sortDirection = 'asc') => {
   return useQuery({
     queryKey: studentKeys.paginated(page, size, sortDirection),
     queryFn: () => studentService.getAll(page, size, sortDirection),
@@ -36,6 +37,29 @@ export const useStudents = (page = 0, size = 100, sortDirection = 'asc') => {
     gcTime: 10 * 60 * 1000,
   })
 }
+
+export const useAllStudents = (sortDirection = 'asc') =>
+  useQuery({
+    queryKey: studentKeys.allPages(sortDirection),
+    queryFn: () => studentService.getAllPages(sortDirection),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+
+export const useAllSearchStudents = (
+  params: StudentSearchParams,
+  sortBy = 'admissionNo',
+  sortDirection: 'asc' | 'desc' = 'asc',
+) =>
+  useQuery({
+    queryKey: [...studentKeys.allPages(sortDirection), 'search', params, sortBy],
+    queryFn: () => studentService.searchAllPages(params, sortBy, sortDirection),
+    enabled: Boolean(
+      params.schoolClassId || params.sectionId || params.searchQuery || params.sessionStatus,
+    ),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  })
 
 export const useSearchStudents = (
   params: StudentSearchParams,

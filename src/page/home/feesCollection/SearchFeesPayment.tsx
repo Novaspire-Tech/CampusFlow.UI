@@ -226,7 +226,7 @@ const SearchFeesPayment: React.FC = () => {
     setIsLoadingBase(true)
     setError('')
     try {
-      const response = await feeTransactionService.getAll(0, 100000, 'desc')
+      const response = await feeTransactionService.getAllPages('desc')
       const rows = (response.feeTransactions || []).map(transformTransaction)
       setAllRecords(rows)
       setDisplayRecords(rows)
@@ -284,12 +284,10 @@ const SearchFeesPayment: React.FC = () => {
         let matchedStudentIds: Set<string> | null = null
         if (shouldCallBackend) {
           try {
-            const studentRes = await studentFilterService.filter({
-              dto: { search: data.keyword || undefined, sessionStatus: 'ACTIVE' },
-              page: 0,
-              size: 100000,
-              sortDirection: 'asc',
-            })
+            const studentRes = await studentFilterService.filterAllPages(
+              { search: data.keyword || undefined, sessionStatus: 'ACTIVE' },
+              'asc',
+            )
             let filteredStudents = studentRes.students as any[]
             if (data.searchClass) {
               filteredStudents = filteredStudents.filter(

@@ -40,7 +40,7 @@ const HostelDashboard: React.FC = () => {
     const fetchStudentsWithHostel = async () => {
       try {
         // Step 1: Get all hostel fee allocations (has hostelName, roomName, admissionNo)
-        const feeResponse = await studentHostelFeesService.getAll(0, 10000);
+        const feeResponse = await studentHostelFeesService.getAllPages();
         const allocations = feeResponse?.content ?? [];
 
         if (allocations.length === 0) {
@@ -50,7 +50,7 @@ const HostelDashboard: React.FC = () => {
 
         // Step 2: Get all students to enrich with gender field
         // studentHostelFeesService does not return gender, so we cross-reference here
-        const studentResponse = await studentService.getAll(0, 10000, "asc");
+        const studentResponse = await studentService.getAllPages("asc");
         const allStudents: any[] = studentResponse?.students ?? [];
 
         // Build a map of admissionNo -> gender for quick lookup

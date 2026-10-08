@@ -15,6 +15,4 @@ export const AuthPaths = {
 
 export const SchoolPaths = {
   subscribe: "/api/subscription/subscribe",
-  getFeatureCodes: (schoolCode: string) =>
-    `/school/${schoolCode}/get/featureCodes`,
 } as const;

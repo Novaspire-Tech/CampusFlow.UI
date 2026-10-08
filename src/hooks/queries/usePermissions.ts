@@ -1,43 +1,13 @@
-import { useState, useEffect } from 'react';
+import { hasScopePermission } from '../../utils/permissions'
 
-interface CrudPermission {
-  operations: string[];
-  scope: string;
-}
+const OPERATIONS = ['READ', 'CREATE', 'UPDATE', 'DELETE'] as const
 
 export const usePermissions = () => {
-  const [permissions, setPermissions] = useState<CrudPermission[]>([]);
-  const role = localStorage.getItem('role');
+  const canPerform = (scope: string, operation: string): boolean =>
+    hasScopePermission(scope, operation)
 
-  useEffect(() => {
-    try {
-      const storedPermissions = localStorage.getItem('crudPermissions');
-      if (storedPermissions) {
-        setPermissions(JSON.parse(storedPermissions));
-      }
-    } catch (error) {
-      console.error('Error loading permissions:', error);
-    }
-  }, []);
-
-  const canPerform = (scope: string, operation: string): boolean => {
-    if (role === 'SCHOOL'||role === 'SCHOOL_GROUP') {
-      return true;
-    }
-
-    return permissions.some(
-      (perm) => perm.scope === scope && perm.operations.includes(operation)
-    );
-  };
-
-  const getOperations = (scope: string): string[] => {
-    if (role === 'SCHOOL') {
-      return ['READ', 'CREATE', 'UPDATE', 'DELETE'];
-    }
-
-    const perm = permissions.find((p) => p.scope === scope);
-    return perm?.operations || [];
-  };
+  const getOperations = (scope: string): string[] =>
+    OPERATIONS.filter((operation) => canPerform(scope, operation))
 
   return {
     canPerform,
@@ -46,5 +16,5 @@ export const usePermissions = () => {
     canCreate: (scope: string) => canPerform(scope, 'CREATE'),
     canUpdate: (scope: string) => canPerform(scope, 'UPDATE'),
     canDelete: (scope: string) => canPerform(scope, 'DELETE'),
-  };
-};
+  }
+}

@@ -27,6 +27,16 @@ export const useBookIssueReturns = (
     placeholderData: (previousData) => previousData,
   });
 
+export const useAllBookIssueReturns = (sortDirection: 'asc' | 'desc' = 'desc') =>
+  useQuery({
+    queryKey: [...bookIssueReturnKeys.all, 'all-pages', sortDirection],
+    queryFn: () => bookIssueReturnService.getAllPages(sortDirection),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+  })
+
 export const useFilterBookIssueReturns = (
   search: string,
   page = 0,

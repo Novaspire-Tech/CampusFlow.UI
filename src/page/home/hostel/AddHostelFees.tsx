@@ -275,7 +275,7 @@ const AddHostelFees: React.FC = () => {
       if (data.sectionId) params.sectionId = Number(data.sectionId)
       if (data.search?.trim()) params.searchQuery = data.search.trim()
 
-      const result = await studentService.search(params, 0, 100000, 'admissionNo', 'asc')
+      const result = await studentService.searchAllPages(params, 'admissionNo', 'asc')
       let students = (result.students ?? [])
         .map(mapRawToRow)
         .filter((s): s is StudentHostelFeeRow => s !== null)
@@ -286,7 +286,7 @@ const AddHostelFees: React.FC = () => {
         if (data.hostelId) filterCriteria.hostelId = Number(data.hostelId)
         if (data.search?.trim()) filterCriteria.search = data.search.trim()
 
-        const feesResult = await studentHostelFeesService.filter(filterCriteria, 0, 100000)
+        const feesResult = await studentHostelFeesService.filterAllPages(filterCriteria)
         const feeMap = new Map<number, any>()
         for (const fee of feesResult.content ?? []) {
           const sid = Number(fee.studentId)

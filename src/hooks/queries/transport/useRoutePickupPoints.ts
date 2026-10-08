@@ -26,6 +26,14 @@ export const useRoutePickupPoints = (
   })
 }
 
+export const useAllRoutePickupPoints = (sortDirection: 'asc' | 'desc' = 'asc') =>
+  useQuery({
+    queryKey: ['routePickupPoints', 'all-pages', sortDirection],
+    queryFn: () => routePickupPointService.getAllPages(sortDirection),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+
 export const useFilterRoutePickupPoints = (
   dto: FilterRoutePickupPointDto,
   page = 0,

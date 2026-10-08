@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useStudents } from "../../queries/studentInformation/useStudents";
+import { useAllStudents } from "../../queries/studentInformation/useStudents";
 import { attendanceService } from "../../../services/attendence/attendanceservice";
 import type {
   StudentAttendanceStatus,
@@ -30,21 +30,15 @@ interface SearchFormData {
 }
 
 interface UseStudentAttendanceOptions {
-  page?: number;
-  size?: number;
   autoLoadStudents?: boolean;
 }
 
 export const useStudentAttendance = (
   options: UseStudentAttendanceOptions = {}
 ) => {
-  const { page = 0, size = 1000000, autoLoadStudents = true } = options;
+  const { autoLoadStudents = true } = options;
 
-  const { data: studentsResponse, isLoading: isLoadingStudents } = useStudents(
-    page,
-    size,
-    "asc"
-  );
+  const { data: studentsResponse, isLoading: isLoadingStudents } = useAllStudents("asc");
 
   const [allStudents, setAllStudents] = useState<StudentForAttendance[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentForAttendance[]>([]);

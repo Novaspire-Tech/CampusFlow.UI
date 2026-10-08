@@ -29,10 +29,8 @@ const TextareaField = <T extends FieldValues>({
   pattern,
   ...rest
 }: TextareaFieldProps<T>) => {
-  const isRequired = required || name === "description";
-
   const validationRules = {
-    ...(isRequired && {
+    ...(required && {
       required: `${label || "This field"} is required`,
     }),
     pattern: pattern ?? {
@@ -43,7 +41,7 @@ const TextareaField = <T extends FieldValues>({
 
   return (
     <div className="mb-2">
-      {label && <Label label={label} required={isRequired} />}
+      {label && <Label label={label} required={required} />}
 
       <Controller
         name={name}

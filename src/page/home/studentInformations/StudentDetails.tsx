@@ -1,5 +1,5 @@
 import { IconField } from '../../../components'
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useQueryClient } from '@tanstack/react-query'
 import ControlledTable from '../../../components/uncontrolled/ControlledTable'
@@ -11,7 +11,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getPagesDataText } from '../../../helpers/useTranslations'
 import {
-  useStudents,
+  useSearchStudents,
   useDeleteStudents,
   useBulkUploadStudentSessions,
   useDownloadStudentSessionTemplate,
@@ -830,12 +830,24 @@ export default function StudentDetails(): React.JSX.Element {
   const searchQuery = searchParams.get('search')
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [searchFilters, setSearchFilters] = useState({ classId: '', sectionId: '', keyword: '' })
+  const studentSearchParams = useMemo(
+    () => ({
+      ...(searchFilters.classId ? { schoolClassId: searchFilters.classId } : {}),
+      ...(searchFilters.sectionId ? { sectionId: searchFilters.sectionId } : {}),
+      ...(searchFilters.keyword ? { searchQuery: searchFilters.keyword } : {}),
+    }),
+    [searchFilters],
+  )
 
   const {
     data: studentsData,
     isLoading: studentsLoading,
+    isFetching: studentsFetching,
     refetch: refetchStudents,
-  } = useStudents(0, 100000, 'asc')
+  } = useSearchStudents(studentSearchParams, page, pageSize, 'admissionNo', 'asc')
   const deleteStudents = useDeleteStudents()
   const bulkUploadSessionMutation = useBulkUploadStudentSessions()
   const downloadSessionTemplateMutation = useDownloadStudentSessionTemplate()
@@ -853,11 +865,6 @@ export default function StudentDetails(): React.JSX.Element {
   const [allStudents, setAllStudents] = useState<Student[]>([])
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([])
   const [paginatedStudents, setPaginatedStudents] = useState<Student[]>([])
-  const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
-  const [searchFilters, setSearchFilters] = useState({ classId: '', sectionId: '', keyword: '' })
-  const [isBackendFiltering, setIsBackendFiltering] = useState(false)
-  const [isFilterActive, setIsFilterActive] = useState(false)
   const [activeView, setActiveView] = useState<'list' | 'details'>('list')
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [fetchedTransport, setFetchedTransport] = useState<FetchedTransport | null>(null)
@@ -918,6 +925,7 @@ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         .map((student: any) => transformApiStudent(student, categoryMap))
         .filter((student: Student | null): student is Student => student !== null)
       setAllStudents(transformedStudents)
+      setFilteredStudents(transformedStudents)
     }
   }, [studentsData, categoryMap])
 
@@ -1054,86 +1062,15 @@ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     fetchStudentDetails()
   }, [selectedStudent?.studentId])
 
-  const runBackendSearch = useCallback(
-    async (classId: string, sectionId: string, keyword: string) => {
-      const hasAnyFilter = classId || sectionId || keyword
-      if (!hasAnyFilter) {
-        setIsFilterActive(false)
-        setFilteredStudents(allStudents)
-        setPage(0)
-        return
-      }
-      setIsBackendFiltering(true)
-      setIsFilterActive(true)
-      setPage(0)
-      try {
-        const params: any = { studentSessionStatus: 'ACTIVE' }
-        if (classId) params.schoolClassId = Number(classId)
-        if (sectionId) params.sectionId = Number(sectionId)
-        if (keyword?.trim()) params.searchQuery = keyword.trim()
-        const result = await studentService.search(params, 0, 100000, 'admissionNo', 'asc')
-        const transformed = (result.students || [])
-          .map((student: any) => transformApiStudent(student, categoryMap))
-          .filter((s: Student | null): s is Student => s !== null)
-        if (transformed.length > 0) {
-          setFilteredStudents(transformed)
-        } else {
-          let fallback = [...allStudents]
-          if (classId) fallback = fallback.filter((s) => String(s.classId) === String(classId))
-          if (sectionId)
-            fallback = fallback.filter((s) => String(s.sectionId) === String(sectionId))
-          if (keyword?.trim()) {
-            const kw = keyword.trim().toLowerCase()
-            fallback = fallback.filter(
-              (s) =>
-                s.studentName?.toLowerCase().includes(kw) ||
-                s.admissionNo?.toLowerCase().includes(kw) ||
-                s.uid?.toLowerCase().includes(kw) ||
-                s.phoneNumber?.toLowerCase().includes(kw) ||
-                s.email?.toLowerCase().includes(kw),
-            )
-          }
-          setFilteredStudents(fallback)
-        }
-      } catch (err) {
-        console.warn('Backend search failed, falling back to local filter:', err)
-        let fallback = [...allStudents]
-        if (classId) fallback = fallback.filter((s) => String(s.classId) === String(classId))
-        if (sectionId) fallback = fallback.filter((s) => String(s.sectionId) === String(sectionId))
-        if (keyword?.trim()) {
-          const kw = keyword.trim().toLowerCase()
-          fallback = fallback.filter(
-            (s) =>
-              s.studentName?.toLowerCase().includes(kw) ||
-              s.admissionNo?.toLowerCase().includes(kw) ||
-              s.uid?.toLowerCase().includes(kw) ||
-              s.phoneNumber?.toLowerCase().includes(kw) ||
-              s.email?.toLowerCase().includes(kw),
-          )
-        }
-        setFilteredStudents(fallback)
-      } finally {
-        setIsBackendFiltering(false)
-      }
-    },
-    [allStudents, categoryMap],
-  )
-
   useEffect(() => {
-    if (!isFilterActive) setFilteredStudents(allStudents)
-  }, [allStudents, isFilterActive])
-
-  useEffect(() => {
-    const start = page * pageSize
-    const end = start + pageSize
-    setPaginatedStudents(filteredStudents.slice(start, end))
-  }, [filteredStudents, page, pageSize])
+    setPaginatedStudents(filteredStudents)
+  }, [filteredStudents])
 
   useEffect(() => {
     if (searchQuery) {
       reset({ searchKeyword: searchQuery })
       setSearchFilters((prev) => ({ ...prev, keyword: searchQuery }))
-      runBackendSearch('', '', searchQuery)
+      setPage(0)
     }
   }, [searchQuery, reset])
 
@@ -1142,20 +1079,18 @@ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const sectionId = data.searchSection ? String(data.searchSection) : ''
     const keyword = data.searchKeyword?.trim() || ''
     setSearchFilters({ classId, sectionId, keyword })
-    await runBackendSearch(classId, sectionId, keyword)
+    setPage(0)
   }
 
   const handleClearFilters = () => {
     reset({ searchClass: '', searchSection: '', searchKeyword: '' })
     setSearchParams({})
     setSearchFilters({ classId: '', sectionId: '', keyword: '' })
-    setIsFilterActive(false)
-    setFilteredStudents(allStudents)
     setPage(0)
   }
 
   const handleView = (id: string | number): void => {
-    const student = allStudents.find((s) => s.id === id)
+    const student = filteredStudents.find((s) => s.id === id) ?? allStudents.find((s) => s.id === id)
     if (student) {
       setSelectedStudent(student)
       setActiveView('details')
@@ -1163,7 +1098,7 @@ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   }
 
   const handleEdit = (id: string | number): void => {
-    const student = allStudents.find((s) => s.id === id)
+    const student = filteredStudents.find((s) => s.id === id) ?? allStudents.find((s) => s.id === id)
     console.log('Passing student to edit:', student);
     if (student) navigate(`/student-admission/${id}`, { state: { student, isEdit: true } })
   }
@@ -1257,9 +1192,10 @@ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     [sectionsData],
   )
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize))
+  const totalPages = Math.max(1, studentsData?.totalPages ?? 1)
   const isDeleting = deleteStudents.isPending
-  const isLoading = studentsLoading || isBackendFiltering
+  const isLoading = studentsLoading || studentsFetching
+  const isBackendFiltering = studentsFetching
 
   const hasTransport =
     !isFetchingDetails &&
@@ -1479,7 +1415,8 @@ console.log(selectedStudent)
           </div>
           {activeView === 'list' && (
             <div className="flex items-center pr-4 text-sm text-gray-600">
-              {T.Show || 'Showing'} {paginatedStudents.length} {T.of || 'of'}{' '} {filteredStudents.length} {T.RESULT || 'results'}
+              {T.Show || 'Showing'} {paginatedStudents.length} {T.of || 'of'}{' '}
+              {studentsData?.totalItems ?? 0} {T.RESULT || 'results'}
             </div>
           )}
         </div>
@@ -1496,7 +1433,7 @@ console.log(selectedStudent)
               {(searchFilters.classId || searchFilters.sectionId || searchFilters.keyword) && (
                 <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Found <span className="font-bold">{filteredStudents.length}</span> students
+                    Found <span className="font-bold">{studentsData?.totalItems ?? 0}</span> students
                     matching your criteria
                   </p>
                 </div>
@@ -1515,7 +1452,7 @@ console.log(selectedStudent)
                 permissionScope="STUDENT"
                 serverPage={page}
                 serverTotalPages={totalPages}
-                serverTotalItems={filteredStudents.length}
+                serverTotalItems={studentsData?.totalItems ?? 0}
                 serverPageSize={pageSize}
                 onServerPageChange={handlePageChange}
                 onServerPageSizeChange={handlePageSizeChange}

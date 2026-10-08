@@ -7,6 +7,7 @@ import {
   type AdminLoginRequest,
   type RegisterRequest,
 } from '../services/apis/api';
+import { packageScopeService } from '../services/systemSettinds/packageScopeService'
 
 interface UserData {
   role: string;
@@ -65,6 +66,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const { data } = response;
+      const schoolGroupCode = localStorage.getItem('schoolGroupCode') ?? ''
+      if (!schoolGroupCode) {
+        localStorage.removeItem('packageScopes')
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        throw new Error('School group code is missing')
+      }
+      try {
+        const packageScopes = await packageScopeService.getForSchoolGroup(schoolGroupCode)
+        localStorage.setItem('packageScopes', JSON.stringify(packageScopes))
+      } catch (error) {
+        localStorage.removeItem('packageScopes')
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        throw error
+      }
       const staffCode = data.staffCode || localStorage.getItem('staffCode') || '';
       if (staffCode) localStorage.setItem('staffCode', staffCode);
       localStorage.setItem('crudPermissions', JSON.stringify(data.role?.crudPermissions ?? []));
@@ -97,6 +114,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const { data } = response;
       const role = typeof data.role === 'object' ? (data.role as any).name ?? '' : data.role ?? '';
+      const schoolGroupCode = localStorage.getItem('schoolGroupCode') || localStorage.getItem('code') || ''
+      if (schoolGroupCode) {
+        try {
+          const packageScopes = await packageScopeService.getForSchoolGroup(schoolGroupCode)
+          localStorage.setItem('packageScopes', JSON.stringify(packageScopes))
+        } catch (error) {
+          localStorage.removeItem('packageScopes')
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          throw error
+        }
+      } else {
+        localStorage.removeItem('packageScopes')
+      }
 
       saveUser({
         role,

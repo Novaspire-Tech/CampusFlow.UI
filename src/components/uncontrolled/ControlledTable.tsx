@@ -65,9 +65,6 @@ interface ControlledTableProps<T> {
   onImportExcel?: (file: File) => void
 }
 
-// A large number sent to backend to mean "fetch all"
-const ALL_PAGE_SIZE = 100000
-
 const PAGE_SIZE_OPTIONS_WITH_ALL = [2, 5, 10, 20, 50, 'all'] as const
 type PageSizeOptionWithAll = (typeof PAGE_SIZE_OPTIONS_WITH_ALL)[number]
 
@@ -89,7 +86,6 @@ function ServerPaginationBar({
   onPageChange,
   onPageSizeChange,
 }: ServerPaginationBarProps) {
-  const isAll = pageSize >= ALL_PAGE_SIZE
   const from = totalItems === 0 ? 0 : currentPage * pageSize + 1
   const to = Math.min((currentPage + 1) * pageSize, totalItems)
 
@@ -107,14 +103,8 @@ function ServerPaginationBar({
         <div className="flex items-center gap-1">
           <span>Rows:</span>
           <select
-            value={isAll ? 'all' : pageSize}
-            onChange={(e) => {
-              if (e.target.value === 'all') {
-                onPageSizeChange(ALL_PAGE_SIZE)
-              } else {
-                onPageSizeChange(Number(e.target.value))
-              }
-            }}
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="border rounded px-1 py-0.5 text-sm"
           >
             {([2, 5, 10, 20, 50] as const).map((s) => (
@@ -122,18 +112,15 @@ function ServerPaginationBar({
                 {s}
               </option>
             ))}
-            <option value="all">All</option>
           </select>
         </div>
-        <span>
-          {isAll ? `1–${totalItems} of ${totalItems}` : `${from}–${to} of ${totalItems}`}
-        </span>
+        <span>{`${from}–${to} of ${totalItems}`}</span>
       </div>
 
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(0)}
-          disabled={currentPage === 0 || isAll}
+          disabled={currentPage === 0}
           className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100"
           aria-label="First page"
         >
@@ -141,15 +128,14 @@ function ServerPaginationBar({
         </button>
         <button
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 0 || isAll}
+          disabled={currentPage === 0}
           className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100"
           aria-label="Previous page"
         >
           ‹
         </button>
 
-        {!isAll &&
-          pageNumbers.map((item, idx) =>
+        {pageNumbers.map((item, idx) =>
             item === '…' ? (
               <span key={`ellipsis-${idx}`} className="px-1">
                 …
@@ -169,15 +155,9 @@ function ServerPaginationBar({
             ),
           )}
 
-        {isAll && (
-          <span className="px-2 py-1 rounded border bg-blue-600 text-white border-blue-600">
-            All
-          </span>
-        )}
-
         <button
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages - 1 || isAll}
+          disabled={currentPage >= totalPages - 1}
           className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100"
           aria-label="Next page"
         >
@@ -185,7 +165,7 @@ function ServerPaginationBar({
         </button>
         <button
           onClick={() => onPageChange(totalPages - 1)}
-          disabled={currentPage >= totalPages - 1 || isAll}
+          disabled={currentPage >= totalPages - 1}
           className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100"
           aria-label="Last page"
         >
@@ -355,7 +335,11 @@ const ControlledTable = <T extends { id: string | number; [key: string]: any }>(
 
   const handleRowSelect = (id: string | number, checked: boolean) => {
     const newSelectedRows = new Set(selectedRows)
-    checked ? newSelectedRows.add(id) : newSelectedRows.delete(id)
+    if (checked) {
+      newSelectedRows.add(id)
+    } else {
+      newSelectedRows.delete(id)
+    }
     setSelectedRows(newSelectedRows)
   }
 

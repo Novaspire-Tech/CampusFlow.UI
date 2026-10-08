@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   getAllSubscriptions,
+  getAllSubscriptionsPages,
   filterSubscriptions,
   getSubscriptionFilterOptions,
   suspendSubscription,
@@ -29,6 +30,13 @@ export const useSubscriptions = (params: GetAllSubscriptionsParams = {}) =>
     },
     staleTime: 2 * 60 * 1000,
     placeholderData: keepPreviousData,
+  })
+
+export const useAllSubscriptions = (sortDirection = 'asc') =>
+  useQuery<SubscriptionPaginatedResponse>({
+    queryKey: [...subscriptionKeys.all, 'all-pages', sortDirection],
+    queryFn: () => getAllSubscriptionsPages(sortDirection),
+    staleTime: 2 * 60 * 1000,
   })
 
 export const useFilterSubscriptions = (

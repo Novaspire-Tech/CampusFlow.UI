@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import { Button, RadioButton, TextField } from '../../../components/controlled'
 import BirthDateField from '../../../components/controlled/BirthDateField'
+import DateField from '../../../components/controlled/DateField'
 import Dropdown from '../../../components/controlled/Dropdown'
 import EmailField from '../../../components/controlled/EmailField'
 import FileUploadField from '../../../components/controlled/FileUploadField'
@@ -79,8 +80,9 @@ const DEFAULT_ADD_SCHOOL_FORM: AddSchoolToGroupForm = {
   phoneNumber: '',
   managedBy: '',
   session: '',
+  startDate: '',
+  endDate: '',
   type: '',
-  databaseName: '',
   logo: null,
   webSite: '',
 }
@@ -199,8 +201,9 @@ const SchoolDetailSubModal: React.FC<SchoolDetailSubModalProps> = ({
       phoneNumber: school.phoneNumber ?? '',
       managedBy: school.managedBy ?? '',
       session: school.session ?? '',
+      startDate: school.startDate ?? '',
+      endDate: school.endDate ?? '',
       type: school.type ?? '',
-      databaseName: school.databaseName ?? '',
       logo: null,
       webSite: school.webSite ?? '',
     },
@@ -219,8 +222,9 @@ const SchoolDetailSubModal: React.FC<SchoolDetailSubModalProps> = ({
           webSite: formData.webSite?.trim(),
           managedBy: formData.managedBy.trim(),
           session: formData.session.trim(),
+          startDate: formData.startDate,
+          endDate: formData.endDate || null,
           type: formData.type.toUpperCase(),
-          databaseName: formData.databaseName.trim().toLowerCase(),
         },
       })
       toast.success('School updated successfully!')
@@ -240,8 +244,9 @@ const SchoolDetailSubModal: React.FC<SchoolDetailSubModalProps> = ({
       webSite: school.webSite ?? '',
       managedBy: school.managedBy ?? '',
       session: school.session ?? '',
+      startDate: school.startDate ?? '',
+      endDate: school.endDate ?? '',
       type: school.type ?? '',
-      databaseName: school.databaseName ?? '',
       logo: null,
     })
     setIsEditing(false)
@@ -363,19 +368,24 @@ const SchoolDetailSubModal: React.FC<SchoolDetailSubModalProps> = ({
                     control={control}
                     required
                   />
+                  <DateField
+                    name="startDate"
+                    label="Start Date"
+                    control={control}
+                    required
+                  />
+                  <DateField
+                    name="endDate"
+                    label="End Date"
+                    control={control}
+                    defaultToday={false}
+                  />
                   <Dropdown
                     name="type"
                     label="School / College Type"
                     control={control}
                     required
                     options={TYPE_OPTIONS}
-                  />
-                  <TextField
-                    name="databaseName"
-                    label="Database Name"
-                    placeholder="e.g. sunrise_school_db"
-                    control={control}
-                    required
                   />
                 </div>
               </div>
@@ -1105,8 +1115,9 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             webSite: editingSchool.webSite ?? '',
             managedBy: editingSchool.managedBy ?? '',
             session: editingSchool.session ?? '',
+            startDate: editingSchool.startDate ?? '',
+            endDate: editingSchool.endDate ?? '',
             type: editingSchool.type ?? '',
-            databaseName: editingSchool.databaseName ?? '',
             logo: null,
           }
         : DEFAULT_ADD_SCHOOL_FORM,
@@ -1127,8 +1138,9 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             webSite: formData.webSite?.trim(),
             managedBy: formData.managedBy.trim(),
             session: formData.session.trim(),
+            startDate: formData.startDate,
+            endDate: formData.endDate || null,
             type: formData.type.toUpperCase(),
-            databaseName: formData.databaseName.trim().toLowerCase(),
           },
         })
         toast.success('School updated successfully!')
@@ -1143,8 +1155,9 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             webSite: formData.webSite?.trim(),
             managedBy: formData.managedBy.trim(),
             session: formData.session.trim(),
+            startDate: formData.startDate,
+            endDate: formData.endDate || null,
             type: formData.type.toUpperCase(),
-            databaseName: formData.databaseName.trim().toLowerCase(),
             logo: formData.logo ?? undefined,
           },
         })
@@ -1256,6 +1269,18 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
                 control={control}
                 required
               />
+              <DateField
+                name="startDate"
+                label="Start Date"
+                control={control}
+                required
+              />
+              <DateField
+                name="endDate"
+                label="End Date"
+                control={control}
+                defaultToday={false}
+              />
               <Dropdown
                 name="type"
                 label="School / College Type"
@@ -1266,19 +1291,6 @@ const AddSchoolForm: React.FC<AddSchoolFormProps> = ({
             </div>
           </div>
 
-          {/* Database */}
-          <div className="pt-6 border-t border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Database Configuration</h2>
-            <div className="grid grid-cols-1 gap-4">
-              <TextField
-                name="databaseName"
-                label="Database Name"
-                placeholder="e.g. sunrise_school_db"
-                control={control}
-                required
-              />
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

@@ -455,6 +455,17 @@ const transformResponseToStudent = (item: any): Student => {
 }
 
 export const studentService = {
+  getAllPages: async (sortDirection = 'asc'): Promise<StudentsPaginatedResponse> => {
+    const pageSize = 10
+    const firstPage = await studentService.getAll(0, pageSize, sortDirection)
+    const students = [...firstPage.students]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentService.getAll(page, pageSize, sortDirection)
+      students.push(...response.students)
+    }
+    return { ...firstPage, students, currentPage: 0 }
+  },
+
   getAll: async (
     page = 0,
     size = 10,
@@ -530,6 +541,21 @@ export const studentService = {
       console.error('Error searching students:', error)
       throw error
     }
+  },
+
+  searchAllPages: async (
+    params: StudentSearchParams,
+    sortBy = 'admissionNo',
+    sortDirection: 'asc' | 'desc' = 'asc',
+  ): Promise<StudentsPaginatedResponse> => {
+    const pageSize = 10
+    const firstPage = await studentService.search(params, 0, pageSize, sortBy, sortDirection)
+    const students = [...firstPage.students]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentService.search(params, page, pageSize, sortBy, sortDirection)
+      students.push(...response.students)
+    }
+    return { ...firstPage, students, currentPage: 0 }
   },
 
   getProfilePicture: async (imagePath: string): Promise<Blob> => {

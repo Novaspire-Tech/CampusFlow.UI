@@ -61,6 +61,14 @@ import { useDepartmentsByClassId } from '../../../hooks/queries/academics/useDep
 import AllSchoolDropdown from '../../../components/uncontrolled/AllSchoolDropdown'
 import { getPagesDataText } from '../../../helpers/useTranslations'
 
+const getLocalDateInputValue = (): string => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const convertToDateInputFormat = (dateStr: string): string => {
   if (!dateStr) return ''
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
@@ -129,7 +137,7 @@ function StudentAdmission() {
       studentCategoryId: '',
       religion: '',
       castName: '',
-      admissionDate: '',
+      admissionDate: getLocalDateInputValue(),
       photo: null,
       bloodGroup: '',
       studentHouseId: '',

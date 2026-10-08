@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconField } from '../../../../components'
 import Button from '../../../../components/controlled/Button'
-import { useStudents } from '../../../../hooks/queries/studentInformation/useStudents'
+import { useAllStudents } from '../../../../hooks/queries/studentInformation/useStudents'
 import { useFeeTypes } from '../../../../hooks/queries/feesCollection/useFeeTypes'
 import { useClassFees } from '../../../../hooks/queries/feesCollection/useClassFees'
 import { feeTransactionService } from '../../../../services/feesCollection/feeTransactionService'
@@ -79,7 +79,7 @@ const AccountantDashboard: React.FC = () => {
     direction: 'up' as 'up' | 'down',
   })
 
-  const { data: studentsData, isLoading: studentsLoading } = useStudents(0, 10000, 'asc')
+  const { data: studentsData, isLoading: studentsLoading } = useAllStudents('asc')
   const { data: feeTypes = [] } = useFeeTypes()
 
   const { data: classFeesResponse = [] } = useClassFees(0, 1000, 'asc')
@@ -150,7 +150,7 @@ const AccountantDashboard: React.FC = () => {
     const loadDashboardData = async () => {
       setIsLoading(true)
       try {
-        const transactionsResponse = await feeTransactionService.getAll(0, 10000, 'desc')
+        const transactionsResponse = await feeTransactionService.getAllPages('desc')
         const transactions = transactionsResponse.feeTransactions || []
         const students = studentsData?.students || []
 

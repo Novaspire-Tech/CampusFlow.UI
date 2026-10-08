@@ -162,10 +162,8 @@ const AttendanceByDate: React.FC = () => {
     }
 
     try {
-      const result = await studentService.search(
+      const result = await studentService.searchAllPages(
         { schoolClassId: String(cls), sectionId: String(section) },
-        0,
-        100000,
         'admissionNo',
         'asc',
       )

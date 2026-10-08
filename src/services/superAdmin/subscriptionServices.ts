@@ -74,6 +74,19 @@ export const getAllSubscriptions = async (
   }
 };
 
+export const getAllSubscriptionsPages = async (
+  sortDirection = 'asc',
+): Promise<SubscriptionPaginatedResponse> => {
+  const pageSize = 10
+  const firstPage = (await getAllSubscriptions({ page: 0, size: pageSize, sortDirection })).data
+  const subscriptions = [...firstPage.subscriptions]
+  for (let page = 1; page < firstPage.totalPages; page += 1) {
+    const response = await getAllSubscriptions({ page, size: pageSize, sortDirection })
+    subscriptions.push(...response.data.subscriptions)
+  }
+  return { ...firstPage, subscriptions, currentPage: 0 }
+}
+
 export const filterSubscriptions = async (
   body:   FilterSubscriptionsBody,
   params: GetAllSubscriptionsParams = {},

@@ -97,13 +97,13 @@ export default function IssueReturn() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const { data: issueReturnsResponse, isLoading } = useBookIssueReturns(0, 10000)
+  const { data: issueReturnsResponse, isLoading } = useBookIssueReturns(page, pageSize)
   const allIssueReturns = issueReturnsResponse?.bookIssueReturns ?? []
 
   const { data: filteredResponse, isFetching: isSearching } = useFilterBookIssueReturns(
     debouncedSearch,
-    0,
-    10000,
+    page,
+    pageSize,
   )
   const filteredBySearch = filteredResponse?.bookIssueReturns ?? []
 
@@ -167,12 +167,10 @@ export default function IssueReturn() {
     [sourceData, memberTypeFilter],
   )
 
-  const totalItems = allFilteredRows.length
-  const totalPages = Math.ceil(totalItems / pageSize) || 1
-  const pagedData = useMemo(() => {
-    const start = page * pageSize
-    return allFilteredRows.slice(start, start + pageSize)
-  }, [allFilteredRows, page, pageSize])
+  const activeResponse = debouncedSearch.trim().length > 0 ? filteredResponse : issueReturnsResponse
+  const totalItems = activeResponse?.totalItems ?? allFilteredRows.length
+  const totalPages = activeResponse?.totalPages ?? (Math.ceil(totalItems / pageSize) || 1)
+  const pagedData = allFilteredRows
 
   useEffect(() => {
     setPage(0)

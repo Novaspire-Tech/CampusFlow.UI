@@ -116,7 +116,7 @@ export const useAddFine = (options: UseAddFineOptions = {}) => {
     if (!autoLoadStudents) return;
     setIsLoadingStudents(true);
     try {
-      const res = await studentFilterService.getAll(0, 100000, "asc");
+      const res = await studentFilterService.getAllPages("asc");
       const transformed = applyShowOnlyWithFees(
         res.students.map(transformStudent),
       );
@@ -177,13 +177,7 @@ export const useAddFine = (options: UseAddFineOptions = {}) => {
 
         console.log("searchStudents - filterDto:", JSON.stringify(filterDto, null, 2));
 
-        const res = await studentFilterService.filter({
-          dto: filterDto,
-          page: 0,
-          size: 100000,
-          sortBy: "admissionNo",
-          sortDirection: "asc",
-        });
+        const res = await studentFilterService.filterAllPages(filterDto, "asc");
 
         let transformed = applyShowOnlyWithFees(
           res.students.map(transformStudent),

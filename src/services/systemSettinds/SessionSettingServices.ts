@@ -1,5 +1,12 @@
 import AxiosFunc from '../../utils/axios'
-import type { Session, SessionStats } from '../../types/systemSettinds/SessionSetting'
+import type {
+  Session,
+  SessionRolloverReport,
+  SessionRolloverRequest,
+  SessionRolloverRequestInput,
+  SessionRequest,
+  SessionStats,
+} from '../../types/systemSettinds/SessionSetting'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -26,6 +33,7 @@ const EP = {
   DELETE_MULTIPLE: '/school-group/{schoolGroupCode}/school/{schoolCode}/session/delete-multiple',
   CHANGE_CURRENT: (id: string) =>
     `/school-group/{schoolGroupCode}/school/{schoolCode}/session/${id}/change-current-session`,
+  ROLLOVER: '/school-group/{schoolGroupCode}/school/{schoolCode}/session/rollover',
 }
 
 // ─── Transform ───────────────────────────────────────────────────────────────
@@ -36,11 +44,42 @@ const toFrontend = (d: any): Session => ({
   sessionName: d.sessionName ?? d.session ?? '',
   session: d.session ?? '',
   isCurrent: d.isCurrent ?? false,
+  startDate: d.startDate ?? '',
+  endDate: d.endDate ?? null,
 })
+
+const toBackendDate = (date: string | null): string | null => {
+  if (!date) return null
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!match) throw new Error('Invalid session date')
+  return `${match[3]}/${match[2]}/${match[1]}`
+}
 
 const extractList = (response: any): Session[] => {
   const data = response?.data?.data?.sessions ?? response?.data?.data ?? response?.data ?? []
   return Array.isArray(data) ? data.map(toFrontend) : []
+}
+
+const isSessionRolloverReport = (value: unknown): value is SessionRolloverReport => {
+  if (typeof value !== 'object' || value === null) return false
+  const report = value as Record<string, unknown>
+  return (
+    typeof report.fromSessionId === 'number' &&
+    typeof report.fromSession === 'string' &&
+    typeof report.toSessionId === 'number' &&
+    typeof report.toSession === 'string' &&
+    typeof report.dryRun === 'boolean' &&
+    Array.isArray(report.copiedClasses) &&
+    report.copiedClasses.every((entry) => typeof entry === 'string') &&
+    Array.isArray(report.skippedClasses) &&
+    report.skippedClasses.every((entry) => typeof entry === 'string') &&
+    typeof report.sectionsCreated === 'number' &&
+    typeof report.subjectGroupsCreated === 'number' &&
+    typeof report.examGroupsCreated === 'number' &&
+    typeof report.classFeesCreated === 'number' &&
+    typeof report.message === 'string'
+  )
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -61,10 +100,11 @@ export const sessionService = {
     }
   },
 
-  create: async (data: Partial<Session>): Promise<Session> => {
+  create: async (data: SessionRequest): Promise<Session> => {
     const response = await AxiosFunc.Post(buildUrl(EP.CREATE), {
-      session: data.session ?? data.sessionName,
-      sessionName: data.sessionName ?? data.session,
+      session: data.session,
+      startDate: toBackendDate(data.startDate),
+      endDate: toBackendDate(data.endDate),
     })
 
     if (response.data?.status !== 200)
@@ -73,10 +113,11 @@ export const sessionService = {
     return toFrontend(response.data?.data ?? {})
   },
 
-  update: async (id: string, data: Session): Promise<Session> => {
+  update: async (id: string, data: SessionRequest): Promise<Session> => {
     const response = await AxiosFunc.Put(buildUrl(EP.UPDATE(id)), {
       session: data.session,
-      sessionName: data.sessionName,
+      startDate: toBackendDate(data.startDate),
+      endDate: toBackendDate(data.endDate),
     })
 
     if (response.data?.status !== 200)
@@ -90,6 +131,60 @@ export const sessionService = {
 
     if (response.data?.status !== 200)
       throw new Error(response.data?.message ?? 'Failed to change current session')
+  },
+
+  rollover: async (request: SessionRolloverRequestInput): Promise<SessionRolloverReport> => {
+    const fromSessionId = Number(request.fromSessionId)
+    const toSessionId = Number(request.toSessionId)
+    if (!Number.isFinite(fromSessionId) || !Number.isFinite(toSessionId)) {
+      throw new Error('Invalid source or target session')
+    }
+
+    const payload: SessionRolloverRequest = {
+      ...request,
+      fromSessionId,
+      toSessionId,
+    }
+    try {
+      const response = await AxiosFunc.Post(buildUrl(EP.ROLLOVER), payload)
+      const envelope = response.data as {
+        status?: unknown
+        message?: unknown
+        data?: unknown
+      }
+
+      if (envelope?.status !== 200) {
+        throw new Error(
+          typeof envelope?.message === 'string'
+            ? envelope.message
+            : 'Failed to copy session structure',
+        )
+      }
+      if (!isSessionRolloverReport(envelope.data)) {
+        throw new Error('The server returned an invalid session rollover report')
+      }
+      return envelope.data
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const responseError = error.response
+        if (
+          typeof responseError === 'object' &&
+          responseError !== null &&
+          'data' in responseError
+        ) {
+          const responseData = responseError.data
+          if (
+            typeof responseData === 'object' &&
+            responseData !== null &&
+            'message' in responseData &&
+            typeof responseData.message === 'string'
+          ) {
+            throw new Error(responseData.message)
+          }
+        }
+      }
+      throw error
+    }
   },
 
   delete: async (id: string): Promise<void> => {

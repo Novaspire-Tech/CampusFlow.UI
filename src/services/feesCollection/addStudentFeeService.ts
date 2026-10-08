@@ -140,7 +140,7 @@ export const addStudentFeeService = {
   searchStudents: async (
     params: SearchStudentsParams,
     page = 0,
-    size = 100000,
+    size = 10,
     sortBy = 'admissionNo',
     sortDirection = 'asc',
   ): Promise<StudentFeeRecord[]> => {
@@ -172,6 +172,36 @@ export const addStudentFeeService = {
       console.error('searchStudents error:', error)
       return []
     }
+  },
+
+  searchAllStudents: async (params: SearchStudentsParams): Promise<StudentFeeRecord[]> => {
+    const pageSize = 10
+    const students: StudentFeeRecord[] = []
+    let page = 0
+    let totalPages = 1
+
+    do {
+      const body: Record<string, number | string> = {}
+      if (params.schoolClassId) body.schoolClassId = params.schoolClassId
+      if (params.sectionId) body.sectionId = params.sectionId
+      if (params.searchQuery?.trim()) body.searchQuery = params.searchQuery.trim()
+
+      const url = buildUrl(ENDPOINTS.SEARCH_STUDENTS)
+      const qs = `page=${page}&size=${pageSize}&sortBy=admissionNo&sortDirection=asc`
+      const response = await AxiosFunc.Post(`${url}?${qs}`, body)
+
+      if (response.data?.status !== 200)
+        throw new Error(response.data?.message || 'Failed to search students')
+
+      const data = response.data?.data
+      const raw = data?.students
+      if (!Array.isArray(raw)) throw new Error('Invalid student search response')
+      students.push(...raw.map(mapRawToStudentFeeRecord))
+      totalPages = Number(data?.totalPages ?? 1)
+      page += 1
+    } while (page < totalPages)
+
+    return students
   },
 
   saveSingleFee: async (params: SaveSingleFeeParams): Promise<void> => {

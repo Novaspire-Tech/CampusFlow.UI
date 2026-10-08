@@ -432,7 +432,6 @@ const SchoolRegistration: React.FC = () => {
           session: formData.session,
           email: "",
           phoneNumber: "",
-          databaseName: "",
           type: "",
           managedBy: "",
           webSite: ""

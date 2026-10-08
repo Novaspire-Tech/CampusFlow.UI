@@ -12,9 +12,9 @@ import {
 import { useRoutes } from "../../../../hooks/queries/transport/useRoutes";
 import { useVehicles } from "../../../../hooks/queries/transport/useVehicles";
 import { usePickupPoints } from "../../../../hooks/queries/transport/usePickupPoints";
-import { useRoutePickupPoints } from "../../../../hooks/queries/transport/useRoutePickupPoints";
+import { useAllRoutePickupPoints } from "../../../../hooks/queries/transport/useRoutePickupPoints";
 import { useAssignVehicles } from "../../../../hooks/queries/transport/useAssignVehicles";
-import { useStudentTransportFees } from "../../../../hooks/queries/transport/useStudentTransportFees";
+import { useAllStudentTransportFees } from "../../../../hooks/queries/transport/useStudentTransportFees";
 import RoutePickupPointsOverview from "../../../../page/home/dashboard/transport/RoutepickupPointsOverview";
 import { getPagesDataText } from "../../../../helpers/useTranslations";
 import { useTranslation } from "react-i18next";
@@ -63,10 +63,10 @@ const TransportDashboard: React.FC = () => {
   const { data: routes = [], isLoading: routesLoading } = useRoutes();
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehicles();
   const { data: pickupPoints = [], isLoading: pickupPointsLoading } = usePickupPoints();
-  const { data: routePickupPointsData, isLoading: routePickupLoading } = useRoutePickupPoints(0, 10000);
+  const { data: routePickupPointsData, isLoading: routePickupLoading } = useAllRoutePickupPoints();
   const { data: assignedVehicles = [], isLoading: assignedVehiclesLoading } = useAssignVehicles();
   const { data: studentTransportFeesData, isLoading: studentFeesLoading } =
-    useStudentTransportFees(0, 100000, "studentTransportFeesId", "asc", true);
+    useAllStudentTransportFees("studentTransportFeesId", "asc");
 
   const routePickupPoints = routePickupPointsData?.routePickupPoints || [];
 

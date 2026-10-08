@@ -125,7 +125,6 @@ import ExpenseGroup from '../page/home/expenses/ExpenseGroup'
 import IncomeGroup from '../page/home/income/IncomeGroup'
 import HostelStudentAllocation from '../page/home/hostel/HostelStudentAllocation'
 import UserActivity from '../page/home/systemSettinds/UserActivity'
-import { schoolApi } from '../services/apis/api'
 import AddStudentFees from '../page/home/feesCollection/AddStudentFees'
 import AddHostelFees from '../page/home/hostel/AddHostelFees'
 import AddStudentTransportFees from '../page/home/transport/StudentTransportFees'
@@ -137,49 +136,17 @@ import { GroupUser } from '../page/home/systemSettinds/GroupUser'
 import FeesAwaitingPayments from '../page/home/feesCollection/FeesAwaitingPayments'
 import PaymentHistory from '../page/home/feesCollection/PaymentHistory'
 import DeleteFeeTransactionById from '../page/home/feesCollection/DeleteFeeTransactionById'
+import { hasScopePermission } from '../utils/permissions'
 
 //  Permission Helpers
 const hasPermissionForScope = (scope?: string): boolean => {
-  const role = localStorage.getItem('role')
-  if (role === 'SCHOOL' || 'SCHOOL_GROUP') return true
-  if (!scope) return true
-
-  try {
-    const storedPermissions = localStorage.getItem('crudPermissions')
-    if (storedPermissions) {
-      const userPermissions = JSON.parse(storedPermissions)
-      if (Array.isArray(userPermissions)) {
-        return userPermissions.some(
-          (permission) => permission.scope === scope && permission.operations.length > 0,
-        )
-      }
-    }
-  } catch (error) {
-    console.error('Error checking permissions:', error)
-  }
-  return false
-}
-
-const hasFeatureAccess = async (featureCode?: string): Promise<boolean> => {
-  const schoolCode = localStorage.getItem('schoolCode') ?? ''
-
-  try {
-    const storedFeatureCodes = await schoolApi.getFeatureCodes(schoolCode)
-    if (!storedFeatureCodes) return false
-    const featureCodes = storedFeatureCodes
-    if (!Array.isArray(featureCodes)) return false
-    return !featureCode || featureCodes.includes(featureCode)
-  } catch (error) {
-    console.error('Error checking feature codes:', error)
-    return false
-  }
+  return hasScopePermission(scope, 'READ')
 }
 
 //  Route Permission Map
 interface RoutePermission {
   path: string
   scope?: string
-  featureCode?: string
   roles?: string[]
 }
 
@@ -192,7 +159,7 @@ const routePermissions: RoutePermission[] = [
   { path: '/transport-dashboard', roles: ['TRANSPORT'] },
   { path: '/accountant-dashboard', roles: ['ACCOUNTANT'] },
   { path: '/receptionist-dashboard', roles: ['RECEPTIONIST'] },
-  { path: '/whatsapp', featureCode: 'WHATSAPP', scope: 'WHATSAPP' },
+  { path: '/whatsapp', scope: 'WHATSAPP' },
   { path: '/admission-enquiry', scope: 'FRONT_OFFICE' },
   { path: '/visitor-book', scope: 'FRONT_OFFICE' },
   { path: '/phone-call-log', scope: 'FRONT_OFFICE' },
@@ -257,7 +224,7 @@ const routePermissions: RoutePermission[] = [
   { path: '/designation', scope: 'HR' },
   { path: '/edit', scope: 'HR' },
   { path: '/staff/view/:staffCode', scope: 'PROFILE' },
-  { path: '/send-email', featureCode: 'COMMUNICATION', scope: 'COMMUNICATION' },
+  { path: '/send-email', scope: 'COMMUNICATION' },
   { path: '/content-type', scope: 'DOWNLOAD_CENTRE' },
   { path: '/upload-/-share-content', scope: 'DOWNLOAD_CENTRE' },
   { path: '/video-tutorial', scope: 'DOWNLOAD_CENTRE' },
@@ -291,10 +258,10 @@ const routePermissions: RoutePermission[] = [
   { path: '/staff-id-card', scope: 'CERTIFICATE' },
   { path: '/generate-staff-id-card', scope: 'CERTIFICATE' },
   { path: '/student-certificate', scope: 'CERTIFICATE' },
-  { path: '/manage-alumni', featureCode: 'ALUMNI', scope: 'ALUMNI' },
-  { path: '/events', featureCode: 'ALUMNI', scope: 'ALUMNI' },
-  { path: '/create-role', featureCode: 'OFFICE', scope: 'ROLE' },
-  { path: '/assign-role', featureCode: 'OFFICE', scope: 'ROLE' },
+  { path: '/manage-alumni', scope: 'ALUMNI' },
+  { path: '/events', scope: 'ALUMNI' },
+  { path: '/create-role', scope: 'ROLE' },
+  { path: '/assign-role', scope: 'ROLE' },
   { path: '/general-settings', scope: 'SYSTEM_SETTINGS' },
   { path: '/session-settings', scope: 'SESSION_SETTING' },
   { path: '/users', scope: 'SYSTEM_SETTINGS' },
@@ -308,7 +275,6 @@ interface ProtectedRouteProps {
   path: string
   roles?: string[]
   scope?: string
-  featureCode?: string
 }
 
 const PublicRoute = ({ element }: { element: JSX.Element }) => {
@@ -341,7 +307,7 @@ const PublicRoute = ({ element }: { element: JSX.Element }) => {
   return element
 }
 
-const ProtectedRoute = ({ element, path, roles, scope, featureCode }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ element, path, roles, scope }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth()
   const role = localStorage.getItem('role')
 
@@ -355,13 +321,10 @@ const ProtectedRoute = ({ element, path, roles, scope, featureCode }: ProtectedR
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (roles && (!role || !roles.includes(role))) return <Navigate to="/unauthorized" replace />
-  if (featureCode && !hasFeatureAccess(featureCode)) return <Navigate to="/" replace />
   if (scope && !hasPermissionForScope(scope)) return <Navigate to="/unauthorized" replace />
 
   const routePermission = routePermissions.find((rp) => path.startsWith(rp.path))
   if (routePermission) {
-    if (routePermission.featureCode && !hasFeatureAccess(routePermission.featureCode))
-      return <Navigate to="/" replace />
     if (routePermission.scope && !hasPermissionForScope(routePermission.scope))
       return <Navigate to="/unauthorized" replace />
     if (routePermission.roles && (!role || !routePermission.roles.includes(role)))
@@ -511,7 +474,6 @@ const MainLayout = ({
                 <ProtectedRoute
                   element={<WhatsApp />}
                   path="/whatsapp"
-                  featureCode="WHATSAPP"
                   scope="WHATSAPP"
                 />
               }
@@ -1062,7 +1024,6 @@ const MainLayout = ({
                 <ProtectedRoute
                   element={<SendEmail />}
                   path="/send-email"
-                  featureCode="COMMUNICATION"
                   scope="COMMUNICATION"
                 />
               }
@@ -1393,7 +1354,6 @@ const MainLayout = ({
                 <ProtectedRoute
                   element={<ManageAlu />}
                   path="/manage-alumni"
-                  featureCode="ALUMNI"
                   scope="ALUMNI"
                 />
               }
@@ -1404,7 +1364,6 @@ const MainLayout = ({
                 <ProtectedRoute
                   element={<Events />}
                   path="/events"
-                  featureCode="ALUMNI"
                   scope="ALUMNI"
                 />
               }

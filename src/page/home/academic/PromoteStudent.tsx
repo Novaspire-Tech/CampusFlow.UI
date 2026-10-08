@@ -11,7 +11,7 @@ import { useSections } from '../../../hooks/queries/academics/useSections'
 import { useSessions } from '../../../hooks/queries/systemSettinds/useSessionSetting'
 import { useFeeTypes } from '../../../hooks/queries/feesCollection/useFeeTypes'
 import { useGetClassFees } from '../../../hooks/queries/feesCollection/useClassFees'
-import { useStudents } from '../../../hooks/queries/studentInformation/useStudents'
+import { useAllStudents } from '../../../hooks/queries/studentInformation/useStudents'
 import { usePromoteStudents } from '../../../hooks/queries/academics/usePromoteStudent'
 import { studentService } from '../../../services/studentInformation/studentService'
 
@@ -103,7 +103,7 @@ const StudentPromotion: React.FC = () => {
 
   const { data: sessionsData } = useSessions()
   const { data: feeTypesData } = useFeeTypes()
-  const { data: allStudentsResponse, isLoading: isLoadingStudents } = useStudents(0, 100000, 'asc')
+  const { data: allStudentsResponse, isLoading: isLoadingStudents } = useAllStudents('asc')
 
   const { data: departmentsData = [] } = useDepartmentsByClassId(
     promoteClassId ? Number(promoteClassId) : undefined,
@@ -268,13 +268,11 @@ const StudentPromotion: React.FC = () => {
     setIsLoadingSearch(true)
     try {
       try {
-        const result = await studentService.search(
+        const result = await studentService.searchAllPages(
           {
             schoolClassId: String(currentClassId),
             sectionId: String(currentSectionId),
           },
-          0,
-          100000,
           'admissionNo',
           'asc',
         )

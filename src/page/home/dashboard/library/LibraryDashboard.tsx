@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 // Import hooks from all library modules
 import { useListBooks } from "../../../../hooks/queries/library/useBookList";
-import { useBookIssueReturns } from "../../../../hooks/queries/library/useBookIssueReturn";
+import { useAllBookIssueReturns } from "../../../../hooks/queries/library/useBookIssueReturn";
 import { useAddStudentMembers } from "../../../../hooks/queries/library/useAddStudent";
 import { useAddStaffMembers } from "../../../../hooks/queries/library/useAddStaff";
 import { getPagesDataText } from "../../../../helpers/useTranslations";
@@ -343,10 +343,8 @@ const LibraryDashboard = () => {
 
   // Fetch data from all library modules
   const { data: books = [], isLoading: booksLoading } = useListBooks();
-  // const { data: issueReturns = [], isLoading: issueLoading } =
-  //   useBookIssueReturns();
   const { data: issueReturnsRaw, isLoading: issueLoading } =
-  useBookIssueReturns(0, 100000, "desc");
+  useAllBookIssueReturns("desc");
 
 // Extract the array from the paginated response
 const issueReturns: any[] = Array.isArray(issueReturnsRaw)

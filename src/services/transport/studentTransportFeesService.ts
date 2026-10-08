@@ -113,6 +113,20 @@ export const studentTransportFeesService = {
     }
   },
 
+  getAllPages: async (
+    sortBy?: string,
+    sortDirection: 'asc' | 'desc' = 'asc',
+  ): Promise<PaginatedResponse<StudentTransportFees>> => {
+    const pageSize = 10
+    const firstPage = await studentTransportFeesService.getAll(0, pageSize, sortBy, sortDirection)
+    const data = [...firstPage.data]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentTransportFeesService.getAll(page, pageSize, sortBy, sortDirection)
+      data.push(...response.data)
+    }
+    return { ...firstPage, data, currentPage: 0 }
+  },
+
  filter: async (
     criteria: StudentTransportFeesFilterCriteria,
     page = 0,
@@ -143,6 +157,33 @@ export const studentTransportFeesService = {
       totalItems,
       totalPages,
     }
+  },
+
+  filterAllPages: async (
+    criteria: StudentTransportFeesFilterCriteria,
+    sortBy?: string,
+    sortDirection: 'asc' | 'desc' = 'asc',
+  ): Promise<PaginatedResponse<StudentTransportFees>> => {
+    const pageSize = 10
+    const firstPage = await studentTransportFeesService.filter(
+      criteria,
+      0,
+      pageSize,
+      sortBy,
+      sortDirection,
+    )
+    const data = [...firstPage.data]
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      const response = await studentTransportFeesService.filter(
+        criteria,
+        page,
+        pageSize,
+        sortBy,
+        sortDirection,
+      )
+      data.push(...response.data)
+    }
+    return { ...firstPage, data, currentPage: 0 }
   },
 
   create: async (data: StudentTransportFeesFormData): Promise<void> => {

@@ -94,7 +94,10 @@ export const authApi = {
       localStorage.setItem('registrationCompleted', String(d.registrationCompleted ?? false))
       localStorage.setItem('subscribed', String(d.subscribed ?? false))
       localStorage.setItem('schoolCode', d.schoolCode ?? '')
-      localStorage.setItem('schoolGroupCode', d.schoolGroupCode ?? '')
+      localStorage.setItem(
+        'schoolGroupCode',
+        d.schoolGroupCode ?? d.schoolGroup?.schoolGroupCode ?? '',
+      )
       localStorage.setItem('schoolName', d.schoolName ?? '')
       localStorage.setItem('email', d.email ?? '')
       localStorage.setItem('userType', d.userType ?? '')
@@ -124,7 +127,11 @@ export const authApi = {
       }
 
       if (d.schoolCode) localStorage.setItem('schoolCode', d.schoolCode)
-      if (d.schoolGroupCode) localStorage.setItem('code', d.schoolGroupCode)
+      const schoolGroupCode = d.schoolGroupCode ?? d.code
+      if (schoolGroupCode) {
+        localStorage.setItem('schoolGroupCode', schoolGroupCode)
+        localStorage.setItem('code', schoolGroupCode)
+      }
         
 
     }
@@ -156,8 +163,5 @@ export const authApi = {
 export const schoolApi = {
   subscribe: async (data: any): Promise<CommonResponse> =>
     (await AxiosFunc.Post(SchoolPaths.subscribe, data)).data,
-
-  getFeatureCodes: async (code: string): Promise<CommonResponse<string[]>> =>
-    (await AxiosFunc.Get(SchoolPaths.getFeatureCodes(code))).data,
 }
  

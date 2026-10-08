@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { IconField } from '../../components'
 import { getSidebarText, getPagesNameText } from '../../helpers/useTranslations'
 import { useTranslation } from 'react-i18next'
-import { schoolApi } from '../../services/apis/api'
+import { hasScopePermission } from '../../utils/permissions'
 // import IncomeGroup from "../../page/home/income/IncomeGroup";
 
 type SubMenuItem = string | { name: string; path: string; scope?: string; roles?: string }
@@ -13,13 +13,7 @@ interface MenuItem {
   path?: string
   icon?: string
   items?: SubMenuItem[]
-  featureCode?: string
   scope?: string
-}
-
-interface CrudPermission {
-  operations: string[]
-  scope: string
 }
 
 interface SidebarProps {
@@ -34,81 +28,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     return null
   }
 
-  const [subscribedFeatures, setSubscribedFeatures] = useState<string[]>([])
-  const [featuresLoading, setFeaturesLoading] = useState(true)
-  const [userPermissions, setUserPermissions] = useState<CrudPermission[]>([])
-
   const location = useLocation()
-
-  const loadPermissions = () => {
-    try {
-      const storedPermissions = localStorage.getItem('crudPermissions')
-      if (storedPermissions) {
-        const permissions = JSON.parse(storedPermissions)
-        if (Array.isArray(permissions)) {
-          setUserPermissions(permissions)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading permissions:', error)
-      setUserPermissions([])
-    }
-  }
-
-  const loadFeatureCodes = async () => {
-    const schoolCode = localStorage.getItem('schoolCode') ?? ''
-
-    try {
-      const response = await schoolApi.getFeatureCodes(schoolCode)
-      console.log(response)
-      if (response.status === 200) {
-        const featureCodes = response.data
-        if (Array.isArray(featureCodes)) {
-          setSubscribedFeatures(featureCodes)
-        } else {
-          setSubscribedFeatures([])
-        }
-      } else {
-        setSubscribedFeatures([])
-      }
-    } catch (error) {
-      console.error('Failed to load sidebar feature codes:', error)
-      setSubscribedFeatures([])
-    } finally {
-      setFeaturesLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadFeatureCodes()
-    loadPermissions()
-
-    const handleFeatureCodesUpdated = () => {
-      loadFeatureCodes()
-      loadPermissions()
-    }
-
-    window.addEventListener('featureCodesUpdated', handleFeatureCodesUpdated)
-
-    return () => {
-      window.removeEventListener('featureCodesUpdated', handleFeatureCodesUpdated)
-    }
-  }, [location.pathname])
   const hasPermissionForScope = (scope?: string): boolean => {
-    const role = localStorage.getItem('role')
-    if (role === 'SCHOOL' || role === 'SCHOOL_GROUP') return true // ✅   ... };
-
-    if (!scope) return true
-
-    return userPermissions.some(
-      (permission) => permission.scope === scope && permission.operations.length > 0,
-    )
+    return hasScopePermission(scope, 'READ')
   }
 
   const { t } = useTranslation()
   const sidebarText = getSidebarText(t)
   const DashboardText = sidebarText.Dashboard
-  const WhatsAppText = sidebarText.WhatsApp
   const FrontOfficeText = sidebarText.Front_Office
   const StudentInformationText = sidebarText.Student_Information
   const FeesCollectionText = sidebarText.Fees_Collection
@@ -295,13 +222,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           roles: 'RECEPTIONIST',
         },
       ],
-    },
-    {
-      title: WhatsAppText,
-      icon: 'FaWhatsapp',
-      items: [{ name: WhatsAppText, path: '/whatsapp' }],
-      featureCode: 'WHATSAPP',
-      scope: 'WHATSAPP',
     },
     {
       title: FrontOfficeText,
@@ -630,17 +550,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     }
   }, [location.pathname])
 
-  // Filter menu items based on featureCode and scope
+  // Filter menu items by user scope permissions.
   const filteredMenuItems = menuItems
     .filter((menu) => {
-      // Feature check for all roles
-      const featureMatch =
-        featuresLoading || !menu.featureCode || subscribedFeatures.includes(menu.featureCode)
-
-      // Permission check (SCHOOL role gets all permissions)
-      const permissionMatch = hasPermissionForScope(menu.scope)
-
-      return featureMatch && permissionMatch
+      return hasPermissionForScope(menu.scope)
     })
     .map((menu) => {
       // Special handling for Dashboard - filter items by role
@@ -668,43 +581,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       }
     })
     .filter((menu) => menu.items && menu.items.length > 0)
-
-  if (featuresLoading) {
-    return (
-      <>
-        {isOpen && (
-          <button
-            type="button"
-            className="campusflow-sidebar-backdrop md:hidden"
-            aria-label="Close navigation"
-            onClick={onClose}
-          />
-        )}
-        <aside
-          className={`campusflow-sidebar ${isOpen ? 'campusflow-sidebar--open' : ''}`}
-          aria-label="Main navigation"
-        >
-          <div className="campusflow-sidebar__header">
-            <div className="campusflow-sidebar__identity">
-              <span className="campusflow-sidebar__identity-mark">
-                <IconField name="FaSchool" size={17} />
-              </span>
-              <div>
-                <p className="campusflow-sidebar__overline">School workspace</p>
-                <h2>{sidebarText.quickLinks}</h2>
-              </div>
-            </div>
-          </div>
-          <div className="campusflow-sidebar__loading">
-            <div className="flex items-center gap-2">
-              <span className="campusflow-sidebar__loading-indicator" />
-              <span>Loading modules…</span>
-            </div>
-          </div>
-        </aside>
-      </>
-    )
-  }
 
   return (
     <>

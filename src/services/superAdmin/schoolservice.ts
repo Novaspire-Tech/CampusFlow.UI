@@ -28,6 +28,8 @@ const toSchool = (item: any): School => {
       phoneNumber: '',
       address: '',
       session: '',
+      startDate: '',
+      endDate: null,
       type: '',
       logo: null,
       tenantId: '',
@@ -53,6 +55,8 @@ const toSchool = (item: any): School => {
     phoneNumber: String(item.phoneNumber ?? ''),
     address: String(item.address ?? ''),
     session: String(item.session ?? ''),
+    startDate: String(item.startDate ?? ''),
+    endDate: item.endDate ?? null,
     type: String(item.type ?? ''),
     logo: item.logo ?? null,
     tenantId: String(item.tenantId ?? ''),
@@ -82,6 +86,14 @@ const extractError = (error: any, fallback: string): never => {
   throw new Error(error?.response?.data?.message ?? error?.message ?? fallback)
 }
 
+const toBackendDate = (date: string | null | undefined): string | null => {
+  if (!date) return null
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!match) throw new Error('Invalid school date')
+  return `${match[3]}/${match[2]}/${match[1]}`
+}
+
 export const schoolService = {
   addToGroup: async (
     schoolGroupCode: string,
@@ -90,7 +102,14 @@ export const schoolService = {
     try {
       const fd = new FormData()
       const { logo, ...schoolFields } = data as AddSchoolToGroupRequest & { logo?: File | null }
-      fd.append('schoolData', JSON.stringify(schoolFields))
+      fd.append(
+        'schoolData',
+        JSON.stringify({
+          ...schoolFields,
+          startDate: toBackendDate(schoolFields.startDate),
+          endDate: toBackendDate(schoolFields.endDate),
+        }),
+      )
       if (logo) fd.append('logo', logo)
       const res = await AxiosFunc.PostFormData(EP.ADD_TO_GROUP(schoolGroupCode), fd)
       if (res.data?.status !== 200 && res.data?.status !== 201)
@@ -143,7 +162,13 @@ export const schoolService = {
   ): Promise<School> => {
     try {
       console.log(dto)
-      const res = await AxiosFunc.Put(EP.UPDATE(groupCode, schoolCode), dto)
+      const res = await AxiosFunc.Put(EP.UPDATE(groupCode, schoolCode), {
+        ...dto,
+        ...(dto.startDate !== undefined
+          ? { startDate: toBackendDate(dto.startDate) }
+          : {}),
+        ...(dto.endDate !== undefined ? { endDate: toBackendDate(dto.endDate) } : {}),
+      })
       if (res.data?.status !== 200) throw new Error(res.data?.message ?? 'Update failed')
       return toSchool(res.data?.data)
     } catch (e: any) {

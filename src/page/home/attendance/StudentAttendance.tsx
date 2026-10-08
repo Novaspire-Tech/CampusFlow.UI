@@ -79,7 +79,7 @@ const StudentAttendance: React.FC = () => {
       if (data.classId) params.schoolClassId = Number(data.classId)
       if (data.sectionId) params.sectionId = Number(data.sectionId)
 
-      const result = await studentService.search(params, 0, 100000, 'admissionNo', 'asc')
+      const result = await studentService.searchAllPages(params, 'admissionNo', 'asc')
 
       const idSet = new Set<string>(
         (result.students || []).map((s: any) => String(s.studentId || s.id)),
