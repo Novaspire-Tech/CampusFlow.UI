@@ -45,23 +45,6 @@ export default defineConfig(({ mode }) => {
       esbuild: {
         drop: ['console', 'debugger'],
       },
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('react')) {
-              return 'react'
-            }
-
-            if (id.includes('react-router')) {
-              return 'router'
-            }
-
-            if (id.includes('node_modules')) {
-              return 'vendor'
-            }
-          },
-        },
-      },
     },
 
     test: {
